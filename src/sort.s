@@ -1,73 +1,57 @@
 	.file	"sort.c"
 	.text
-	.p2align 4
-	.globl	sort_array
-	.type	sort_array, @function
+	.align	2
+	.p2align 4,,11
+	.global	sort_array
+	.type	sort_array, %function
 sort_array:
 .LFB0:
 	.cfi_startproc
-	endbr64
-	leal	-1(%rsi), %r8d
-	testl	%r8d, %r8d
-	jle	.L1
-	.p2align 4,,10
-	.p2align 3
+	sub	w5, w1, #1
+	cmp	w5, 0
+	ble	.L1
+	add	x4, x0, w5, sxtw 3
+	.p2align 3,,7
 .L5:
-	movq	%rdi, %rax
-	xorl	%edx, %edx
-	.p2align 4,,10
-	.p2align 3
+	mov	x1, x0
+	.p2align 3,,7
 .L4:
-	movq	(%rax), %rsi
-	movq	8(%rax), %rcx
-	cmpq	%rcx, %rsi
-	jle	.L3
-	movq	%rsi, 8(%rax)
-	movq	%rcx, (%rax)
+	ldp	x2, x3, [x1]
+	cmp	x2, x3
+	ble	.L3
+	stp	x3, x2, [x1]
 .L3:
-	addl	$1, %edx
-	addq	$8, %rax
-	cmpl	%edx, %r8d
-	jg	.L4
-	subl	$1, %r8d
-	jne	.L5
+	add	x1, x1, 8
+	cmp	x1, x4
+	bne	.L4
+	sub	x4, x4, #8
+	subs	w5, w5, #1
+	bne	.L5
 .L1:
 	ret
 	.cfi_endproc
 .LFE0:
 	.size	sort_array, .-sort_array
-	.p2align 4
-	.globl	swap_element
-	.type	swap_element, @function
+	.align	2
+	.p2align 4,,11
+	.global	swap_element
+	.type	swap_element, %function
 swap_element:
 .LFB1:
 	.cfi_startproc
-	endbr64
-	movq	(%rdi), %rax
-	xorq	(%rsi), %rax
-	movq	%rax, (%rdi)
-	xorq	(%rsi), %rax
-	movq	%rax, (%rsi)
-	xorq	%rax, (%rdi)
+	ldr	x3, [x1]
+	ldr	x2, [x0]
+	eor	x2, x2, x3
+	str	x2, [x0]
+	ldr	x3, [x1]
+	eor	x2, x2, x3
+	str	x2, [x1]
+	ldr	x1, [x0]
+	eor	x1, x1, x2
+	str	x1, [x0]
 	ret
 	.cfi_endproc
 .LFE1:
 	.size	swap_element, .-swap_element
-	.ident	"GCC: (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0"
+	.ident	"GCC: (Ubuntu 12.3.0-1ubuntu1~23.04) 12.3.0"
 	.section	.note.GNU-stack,"",@progbits
-	.section	.note.gnu.property,"a"
-	.align 8
-	.long	1f - 0f
-	.long	4f - 1f
-	.long	5
-0:
-	.string	"GNU"
-1:
-	.align 8
-	.long	0xc0000002
-	.long	3f - 2f
-2:
-	.long	0x3
-3:
-	.align 8
-4:
