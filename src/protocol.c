@@ -1,9 +1,9 @@
 #include <protocol.h>
 
-int read_message(FILE *stream, u_int8_t *buf) {
+int read_message(FILE *stream, void *buf) {
     int count_correct_read_number;
     buf[count_correct_read_number++] = 0x7E;
-    const unsigned int mask = 0b11111;
+    int mask = 0b11111;
     int number_read;
     int count_shift;
     u_int8_t number_tmp;
@@ -28,7 +28,7 @@ int read_message(FILE *stream, u_int8_t *buf) {
     return count_correct_read_number;
 }
 
-int write_message(FILE *stream, u_int8_t *buf, size_t nbyte) {
+int write_message(FILE *stream, void *buf, size_t nbyte) {
     int count_correct_write_number;
 
     for (int i = 0; i < nbyte; ++i) {
