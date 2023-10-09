@@ -1,7 +1,8 @@
 #include <protocol.h>
+#include <inttypes.h>
 
 int read_message(FILE *stream, void *buf) {
-    u_int8_t *x = (u_int8_t *) buf;
+    uint8_t *x = (uint8_t *) buf;
     int count_correct_write_number;
 
     for (int i = 0; i < 10; ++i) {
@@ -13,13 +14,13 @@ int read_message(FILE *stream, void *buf) {
 }
 
 int write_message(FILE *stream, const void *buf, size_t nbyte) {
-    u_int8_t *x = (u_int8_t *) buf; // только новую переменную создавать?
+    uint8_t *x = (uint8_t *) buf; // только новую переменную создавать?
     putc(0x77, stream); //проверка ?
     int mask = 0b11111;
     int count_correct_write_number = 1;
     int count_shift = 0;
-    u_int8_t number_tmp = 0;
-    u_int8_t number_correct = 0;
+    uint8_t number_tmp = 0;
+    uint8_t number_correct = 0;
     int count_cycle = 0;
 
     for (int i = 0; i < nbyte; ++i) {
