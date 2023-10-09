@@ -16,14 +16,14 @@ int read_message(FILE *stream, void *buf) {
 int write_message(FILE *stream, const void *buf, size_t nbyte) {
     uint8_t *x = (uint8_t *) buf; // только новую переменную создавать?
     putc(0x77, stream); //проверка ?
-    int mask = 0b11111;
+    int mask = 0x1f;
     int count_correct_write_number = 1;
     int count_shift = 0;
     uint8_t number_tmp = 0;
     uint8_t number_correct = 0;
     int count_cycle = 0;
 
-    for (int i = 0; i < nbyte; ++i) {
+    for (long unsigned int i = 0; i < nbyte; ++i) {
         number_tmp = (x[i] >> count_shift) | number_correct; // проверка?
         
         for (int i = 3; i > -1; i--) {
