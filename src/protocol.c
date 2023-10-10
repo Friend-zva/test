@@ -25,7 +25,7 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
     uint8_t *array = (uint8_t *) buf; 
     uint8_t xxx = 0;
 
-    for (int i = 0; i < nbyte; ++i) {
+    for (size_t i = 0; i < nbyte; ++i) {
         uint8_t shift_correct = array[i] >> count_shift;
         //printf("%x\n", shift_correct);
         uint8_t check = last4 | (shift_correct >> 4);
