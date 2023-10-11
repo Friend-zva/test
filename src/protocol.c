@@ -3,102 +3,69 @@
 
 int read_message(FILE *stream, void *buf) {
     uint8_t *y = (uint8_t *) buf;
+    uint8_t mask = 0x1F;
     int count_correct_read_number = 0;
     int tmp = 0;
+    int count_shift = 0;
+    uint8_t correction;
     while ((tmp = getc(stream)) != EOF) {
-        y[count_correct_read_number++] = tmp;
-        printf("%x ", y[count_correct_read_number - 1]);
+        uint8_t number_tmp = tmp;
+        
+        if (number_tmp != 0x7E && number_tmp != 0xff) {
+            for (int cycle = 3; cycle > -1; cycle--) {
+                if ((number_tmp >> cycle) == mask) {
+                    count_shift++;
+                    break;
+                }
+            }
+            y[count_correct_read_number++] = number_tmp;
+        } else {
+            count_correct_read_number++;
+        }
     }
 
     return count_correct_read_number;
 }
 
+
 int write_message(FILE *stream, const void *buf, size_t nbyte) {
-    int mask = 0x1F; 
-    int count_correct_write_number = 1;
-    int count_shift = 0;
+    uint8_t *array = (uint8_t *) buf;
+    uint8_t mask = 0x1F;
     uint8_t number_tmp = 0;
-    uint8_t number_correct = 0;
-    putc(0x77, stream); 
+    uint8_t correction = 0;
+    int count_shift = 0;
 
-    uint8_t last4 = 0;
-    uint8_t *array = (uint8_t *) buf; 
-    uint8_t xxx = 0;
+    putc(0x7E, stream);
+    int count_correct_write_number = 1;
 
-    for (size_t i = 0; i < nbyte; ++i) {
-        uint8_t shift_correct = array[i] >> count_shift;
-        //printf("%x\n", shift_correct);
-        uint8_t check = last4 | (shift_correct >> 4);
-        for (int j = 3; j > -1; j--) { // проверка на number_correct + shift_correct
-            if ((check >> j) == mask) {
+    for (unsigned long ind = 0; ind < nbyte; ++ind) {
+        number_tmp = (correction << (4 - count_shift)) | (array[ind] >> count_shift);
+
+        for (int cycle = 3; cycle >= -1; cycle--) {
+            if ((correction | (array[ind] >> 4)) >> cycle == mask) {
+                number_tmp = (correction << (4 - count_shift)) | ((array[ind] >> (4 - cycle)) << (4 - cycle)) | ((array[ind] << (8 - cycle)) >> (8 - cycle + 1 + count_shift));
                 count_shift++;
-                check >>= j;
-                uint8_t shift_left =  shift_correct << (8 - j);
-                uint8_t shift_right = shift_left >> (8 - j + 1);
-                uint8_t shift_return = check << (j + 4);
-                number_correct = shift_left;
-                //printf("%x\n", shift_right);
-                shift_correct = shift_return | shift_right;
-                break;
-            }
-        }
-        //printf("%x\n", shift_correct);
-        number_tmp = shift_correct | xxx; 
-        //printf("%x\n", number_tmp);
-
-        /*for (int j = 3; j > -1; j--) { // проверка на number_correct + shift_correct
-            if ((number_tmp >> j) == mask) {
-                count_shift++;
-                number_tmp >>= j;
-                count_cycle = j; // мб без j?
-                break;
-            }
-        }*/
-
-        int count_cycle = 0;
-        for (int j = 3; j > -1; j--) {
-            if ((number_tmp >> j) == mask) {
-                count_shift++;
-                number_tmp >>= j;
-                count_cycle = j; // мб без j?
                 break;
             }
         }
 
-        if (count_shift == 0) {
-            uint8_t shift_left = number_tmp << (8 - count_cycle);
-            uint8_t shift_right = shift_left >> (8 - count_cycle + 1);
-            uint8_t shift_return = number_tmp << count_cycle;
-            last4 = (shift_return | shift_right) << 4;
-            putc(number_tmp, stream);
-            number_correct = shift_left;
-        } else if (count_shift == 8) {
-            // проверка нужна
-            count_shift = 0;
-            // очистка нужна
-        } else {
-            uint8_t shift_left = number_tmp << (8 - count_cycle);
-            uint8_t shift_right = shift_left >> (8 - count_cycle + 1);
-            uint8_t shift_return = number_tmp << count_cycle;
-            last4 = (shift_return | shift_right) << 4;
-            putc(shift_return | shift_right, stream);
-            number_correct = shift_left;
+        //count_cycle = 0;
+        for (int cycle = 3; cycle > -1; cycle--) {
+            if ((number_tmp >> cycle) == mask) {
+                number_tmp = ((number_tmp >> cycle) << cycle) | ((array[ind] << (8 - cycle)) >> (8 - cycle + 1 + count_shift));
+                count_shift++;
+                break;
+            }
         }
-        if (count_shift != 0) {
-            xxx = number_correct << (1 + count_shift); 
-        }
-        //number_correct = (buf[i] << (8 - count_cycle));
+
+        correction = array[ind] << 4;
+        putc(number_tmp, stream);
         count_correct_write_number++;
-
-        //number_correct = (array[i] << (8 - count_cycle)) >> (8 - count_cycle + 1); // если 0, то все равно сдвинется
     }
-    if (count_shift != 0) {
-        putc((0x77 >> count_shift) | xxx, stream);
-        xxx = 0x77 << (8 - count_shift);
-        count_correct_write_number++;
-        putc(xxx | (0xFF >> count_shift), stream);
-    } else {
-        putc(0x77, stream);
+    putc((0x7E >> count_shift) | (correction << (8 - count_shift)), stream); // почему (8 - count_shift)
+    count_correct_write_number++;
+    if (count_shift % 8 != 0) {
+        putc(0xFF >> count_shift | (0x7E << (8 - count_shift)), stream); // & ? |
     }
     return count_correct_write_number;
 }
