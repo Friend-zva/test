@@ -7,7 +7,6 @@ int read_message(FILE *stream, void *buf) {
     int count_correct_read_number = 0;
     int tmp = 0;
     int count_shift = 0;
-    uint8_t correction;
     while ((tmp = getc(stream)) != EOF) {
         uint8_t number_tmp = tmp;
         
