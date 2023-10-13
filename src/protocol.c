@@ -81,7 +81,7 @@ int read_message(FILE *stream, void *buf) {
     uint8_t number_correction = 0;
     unsigned int count_shift = 0;
     int tmp = 0; // char не робит? а почему робит ансайд инт он же с 0
-    while ((tmp = getc(stream)) != EOF) { // или ff ?
+    while ((tmp = getc(stream)) != EOF && tmp != spare_units) { // или ff ?
         tmp = (uint8_t) tmp;
         if (tmp != marker) {
             if (count_read_number != 0) {
