@@ -86,20 +86,31 @@ int read_message(FILE *stream, void *buf) {
         if (tmp != marker) {
             if (count_read_number != 0) {
                 number_correction = tmp >> (8 - count_shift);
-                //printf("coo number_correction = %x ", number_correction);
-                number_tmp |= number_correction;
-                //printf("coo number_tmp = %x\n", number_tmp);
-                // search mask
+                printf("coo number_correction = %x ", number_correction);
+                printf("coo number_tmp = %x\n", number_tmp);
+                uint8_t check = (number_tmp << 4) | (tmp >> 3);
+                for (int cycle = 3; cycle >= 0; cycle--) {
+                    if (((check >> cycle) & mask) == mask && check != marker) {
+                        // это работает для одного, но мы должны еще сменить новое number_tmp
+                        count_shift++;
+                        /*if (cycle == 0) {
+                            number_correction <<= 1;
+                        } else {
+                            number_correction = buffer[index] << (8 - count_shift);
+                        }*/
+                        break;
+                    }
+                }
 
-                if (number_tmp == marker) {
+                if ((number_tmp | number_correction) == marker) {
                     count_read_number--;
                     break;
                 }
-                buffer[count_read_number - 1] = number_tmp;
+                buffer[count_read_number - 1] = (number_tmp | number_correction);
             }
-            //printf("tmp = %x ", tmp);
+            printf("tmp = %x ", tmp);
             number_tmp = tmp << count_shift;
-            //printf("number_tmp = %x ", number_tmp);
+            printf("number_tmp = %x ", number_tmp);
             for (int cycle = 3; cycle >= 0; cycle--) {
                 if (((number_tmp >> cycle) & mask) == mask && number_tmp != marker) {
                     uint8_t one = number_tmp >> cycle;
@@ -114,7 +125,7 @@ int read_message(FILE *stream, void *buf) {
                     break;
                 }
             }
-            //printf("number_tmp = %x\n", number_tmp);
+            printf("number_tmp = %x\n", number_tmp);
             count_read_number++;
         } else if (count_read_number > 0) {
             number_correction = number_tmp >> (8 - count_shift);
