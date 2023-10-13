@@ -78,7 +78,7 @@ int read_message(FILE *stream, void *buf) {
     uint8_t *buffer = (uint8_t *) buf;
     int count_read_number = 0;
     uint8_t number_tmp = 0;
-    uint8_t number_correction = 0;
+    //uint8_t number_correction = 0;
     int tmp = 0; // char не робит?
 
     while ((tmp = getc(stream)) != EOF) {
