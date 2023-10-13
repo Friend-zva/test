@@ -85,14 +85,23 @@ int read_message(FILE *stream, void *buf) {
         tmp = (uint8_t) tmp;
         if (tmp != marker) {
             if (count_read_number != 0) {
-                number_correction = number_tmp >> (8 - count_shift);
-                buffer[count_read_number - 1] = number_tmp | number_correction;
-            }
+                number_correction = tmp >> (8 - count_shift);
+                //printf("coo number_correction = %x ", number_correction);
+                number_tmp |= number_correction;
+                //printf("coo number_tmp = %x\n", number_tmp);
+                // search mask
 
-            number_tmp = tmp;
-            number_correction = tmp >> (8 - count_shift);
+                if (number_tmp == marker) {
+                    count_read_number--;
+                    break;
+                }
+                buffer[count_read_number - 1] = number_tmp;
+            }
+            //printf("tmp = %x ", tmp);
+            number_tmp = tmp << count_shift;
+            //printf("number_tmp = %x ", number_tmp);
             for (int cycle = 3; cycle >= 0; cycle--) {
-                if (((number_tmp >> cycle) & mask) == mask) {
+                if (((number_tmp >> cycle) & mask) == mask && number_tmp != marker) {
                     uint8_t one = number_tmp >> cycle;
                     uint8_t two = number_tmp << (8 - cycle + 1);
                     number_tmp = (one << cycle) | (two >> (8 - cycle));
@@ -105,6 +114,7 @@ int read_message(FILE *stream, void *buf) {
                     break;
                 }
             }
+            //printf("number_tmp = %x\n", number_tmp);
             count_read_number++;
         } else if (count_read_number > 0) {
             number_correction = number_tmp >> (8 - count_shift);
