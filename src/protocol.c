@@ -76,15 +76,39 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
 
 int read_message(FILE *stream, void *buf) {
     uint8_t *buffer = (uint8_t *) buf;
-    int count_read_number = 0;
+    unsigned int count_read_number = 0;
     uint8_t number_tmp = 0;
-    //uint8_t number_correction = 0;
-    int tmp = 0; // char не робит?
+    uint8_t number_correction = 0;
+    unsigned int count_shift = 0;
+    int tmp = 0; // char не робит? а почему робит ансайд инт он же с 0
+    while ((tmp = getc(stream)) != EOF) { // или ff ?
+        tmp = (uint8_t) tmp;
+        if (tmp != marker) {
+            if (count_read_number != 0) {
+                number_correction = number_tmp >> (8 - count_shift);
+                buffer[count_read_number - 1] = number_tmp | number_correction;
+            }
 
-    while ((tmp = getc(stream)) != EOF) {
-        number_tmp = tmp;
-        if (number_tmp != marker) {
-            buffer[count_read_number++] = number_tmp;
+            number_tmp = tmp;
+            number_correction = tmp >> (8 - count_shift);
+            for (int cycle = 3; cycle >= 0; cycle--) {
+                if (((number_tmp >> cycle) & mask) == mask) {
+                    uint8_t one = number_tmp >> cycle;
+                    uint8_t two = number_tmp << (8 - cycle + 1);
+                    number_tmp = (one << cycle) | (two >> (8 - cycle));
+                    count_shift++;
+                    /*if (cycle == 0) {
+                        number_correction <<= 1;
+                    } else {
+                        number_correction = buffer[index] << (8 - count_shift);
+                    }*/
+                    break;
+                }
+            }
+            count_read_number++;
+        } else if (count_read_number > 0) {
+            number_correction = number_tmp >> (8 - count_shift);
+            buffer[count_read_number] = number_tmp | number_correction;
         }
     }
     return count_read_number;
