@@ -1,6 +1,5 @@
 #include <protocol.h>
 
-
 #define marker 0x7e
 #define mask 0x1f
 #define spare_units 0xff
@@ -207,5 +206,5 @@ int read_message(FILE *stream, void *buf) {
             // записать last
         }
     }
-    return count_read_byte;
+    return count_read_byte - 2;
 }
