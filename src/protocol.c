@@ -172,6 +172,7 @@ int read_message(FILE *stream, void *buf) {
                 for (int cycle = 7; cycle >= 0; cycle--) {
                     if (((tmp >> cycle) & 0x01) == 0x00) {
                         count_shift = (7 - cycle);
+                        count_read_byte++;
                         break;
                     }
                 }
@@ -204,6 +205,7 @@ int read_message(FILE *stream, void *buf) {
 
         } else if (count_read_byte > 0) {
             // записать last
+            count_read_byte++;
         }
     }
     return count_read_byte;
