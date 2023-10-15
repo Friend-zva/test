@@ -5,132 +5,207 @@
 #define mask 0x1f
 #define spare_units 0xff
 
+int search_mask(uint8_t *byte_check) {
+    for (int cycle = 3; cycle >= 0; cycle--) {
+        if (((*byte_check >> cycle) & mask) == mask) {
+            uint8_t part_one = *byte_check >> cycle;
+            uint8_t part_two = *byte_check << (8 - cycle);
+            *byte_check = (part_one << cycle) | (part_two >> (8 - cycle + 1));
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int write_message(FILE *stream, const void *buf, size_t nbyte) {
     uint8_t *buffer = (uint8_t *) buf;
-    unsigned int count_write_number = 0;
-    uint8_t number_tmp = 0;
-    uint8_t number_correction = 0;
+    unsigned int count_write_byte = 0;
+    uint8_t byte_tmp = 0;
+    uint8_t byte_joint = 0;
+    uint8_t byte_shift = 0;
     unsigned int count_shift = 0;
+    // printf("putc = %x ", marker);
     putc(marker, stream);
 
     for (unsigned long index = 0; index < nbyte; ++index) {
-        //printf("index = %lu ", index);
-        //printf("buffer >> (4 + count_shift) = %x\n", buffer[index] >> (4 + count_shift));
+        
+        // printf("\nindex = %lu  ", index);
+        // printf("buffer:%x ", buffer[index]);
+        // printf("count_shift = %x ", count_shift);
+        // printf("byte_shift = %x ", byte_shift);
+        // printf("byte_tmp = %x ", byte_tmp);
+        
+        byte_joint = byte_tmp | (byte_shift >> 4) | (buffer[index] >> (4 + count_shift));
+        byte_tmp = byte_shift | (buffer[index] >> count_shift);
+        // printf("byte_joint = %x\n", byte_joint);
         for (int cycle = 3; cycle >= 0; cycle--) {
-            if ((((number_tmp | number_correction | (buffer[index] >> (4 + count_shift))) >> cycle) & mask) == mask) {
-                //printf("cycle = %x ", cycle);
-                //printf("проверка: %x ", (number_tmp | number_correction | (buffer[index] >> (4 + count_shift))) >> cycle);
-                uint8_t one = (buffer[index] >> (8 - count_shift - cycle));
-                uint8_t two = (buffer[index] << (count_shift + cycle));
-                number_tmp = number_correction | (one << (8 - count_shift - cycle)) | (two >> (count_shift + cycle + 1));
-                //printf("number_tmp = %x\n", number_tmp);
+            if (((byte_joint >> cycle) & mask) == mask) {
+                uint8_t part_one = byte_joint >> cycle;
+                uint8_t part_two = byte_joint << (8 - cycle);
+                byte_joint = (part_one << cycle) | (part_two >> (8 - cycle + 1));
+                if (count_shift > 4) {
+                    byte_tmp = (byte_joint << 4) | (byte_shift & 0x0f) | (buffer[index] >> count_shift); // что???
+                } else {
+                    byte_tmp = (byte_joint << 4) | (buffer[index] >> (4 - cycle + count_shift)); // подобрал
+                }
                 count_shift++;
-                // number_correction = number_tmp >> count_shift;
-                // number_correction <<= count_shift; // dont change
-                // //printf("number_correction = %x\n", number_correction);
                 break;
             }
         }
 
-        number_correction <<= 4;
-        number_tmp = number_correction | (buffer[index] >> count_shift); // test
-        number_correction = buffer[index] << (8 - count_shift);
-        //printf("number_tmp вне цикла = %x\n", number_tmp);
+        if (count_shift == 8) {
+            byte_tmp = byte_shift;
+            if (search_mask(&byte_tmp)) {
+                putc(byte_tmp, stream);
+                count_shift = 1;
+                byte_shift <<= (8 - count_shift);
+                byte_tmp = byte_shift | (buffer[index] >> count_shift);
+            } else {
+                putc(byte_tmp << 4, stream);
+                count_shift = 0;
+                byte_shift = 0;
+                byte_tmp = buffer[index];
+            }
+        }
+
+        // if (search_mask(&byte_joint)) {
+        //     printf("byte_joint = %x\n", byte_joint);
+        //     byte_tmp = (byte_joint << 4) | ((buffer[index] & 0x1f) >> count_shift);
+        //     count_shift++;
+        // } else {
+        //     byte_tmp = byte_shift | (buffer[index] >> count_shift);
+        // }
+
+        // printf("byte_tmp = %x ", byte_tmp);
+        byte_shift = buffer[index] << (8 - count_shift);
+        // if (search_mask_in_byte_read(&byte_tmp) == 0) {
+        //     byte_shift >>= 1;
+        // } else {
+        //     byte_shift = buffer[index] << (8 - (count_shift + 1));
+        // }
         for (int cycle = 3; cycle >= 0; cycle--) {
-            if (((number_tmp >> cycle) & mask) == mask) {
-                uint8_t one = number_tmp >> cycle;
-                uint8_t two = number_tmp << (8 - cycle);
-                number_tmp = (one << cycle) | (two >> (8 - cycle + 1));
+            if (((byte_tmp >> cycle) & mask) == mask) {
+                uint8_t one = byte_tmp >> cycle;
+                uint8_t two = byte_tmp << (8 - cycle);
+                byte_tmp = (one << cycle) | (two >> (8 - cycle + 1)); // разве one != byte_tmp ? 
                 count_shift++;
+                //printf("count_shift = %x ", count_shift);
                 if (cycle == 0) {
-                    number_correction <<= 1;
+                    byte_shift >>= 1;
                 } else {
-                    number_correction = buffer[index] << (8 - count_shift);
+                    byte_shift = buffer[index] << (8 - count_shift);
                 }
                 break;
             }
         }
+        // printf("putc = %x ", byte_tmp);
+        putc(byte_tmp, stream);
+
+        if (count_shift == 8) {
+            byte_tmp = byte_shift;
+            if (search_mask(&byte_tmp)) {
+                putc(byte_tmp, stream);
+                count_shift = 1;
+                byte_shift <<= (8 - count_shift);
+            } else {
+                putc(byte_tmp << 4, stream);
+                count_shift = 0;
+                byte_shift = 0;
+            }
+        }
         
-        putc(number_tmp, stream);
-        count_write_number++;
-        //printf("putc = %x ", number_tmp);
-        //number_correction = buffer[index] << (8 - count_shift);
-        //printf("number_correction = %x ", number_correction);
-        number_correction >>= 4;
-        //printf("number_correction >> 4 = %x ", number_correction);
-        number_tmp <<= 4;
-        //printf("putc << 4 = %x\n", number_tmp);
-        //printf("\n");
-        ////printf("%x\n", number_tmp);
-        //number_checked = number_tmp << 4 | buffer[index] << (8 - count_shift);
-        //number_correction = buffer[index] << (8 - count_shift);
+        // printf("byte_shift = %x ", byte_shift);
+        // printf("putc = %x\n", byte_tmp);
+        byte_tmp <<= 4;
+        count_write_byte++;
     }
-    putc(number_correction | (marker >> count_shift), stream);
-    number_correction = marker << (8 - count_shift);
+    int flag = 0;
+    for (int cycle = 3; cycle >= 0; cycle--) {
+        if ((((byte_tmp | byte_shift >> 4) >> cycle) & mask) == mask) {
+            byte_tmp |= (byte_shift >> 4);
+            count_shift++;
+            // printf("\n\n\n");
+            // printf("%x\n", byte_tmp);
+            if (count_shift > 4) {
+                uint8_t part_one = byte_tmp >> cycle;
+                uint8_t part_two = byte_shift << (4 - cycle);
+                byte_tmp = part_one << (4 + cycle) | part_two >> (4 - cycle +1) | marker >> (count_shift); // лишнее?
+                // printf("\n\n%x\n\n", byte_tmp);
+// привет, вова. тут крч частный случай но вот так ^ можно круто считывать и все будет ок. удачи. 
+                putc(byte_tmp, stream);
+            } else {
+                putc(byte_tmp << 4 | marker >> (count_shift), stream); // byte_tmp << (4 + cycle)?
+            }
+            flag = 1;
+            break;
+        }
+    }
+    if (flag == 0) {
+        if (count_shift != 0) {
+            // printf("putc = %x ", byte_shift | marker >> count_shift);
+            putc(byte_shift | marker >> count_shift, stream);
+        } else {
+            // printf("putc = %x ", marker);
+            putc(marker, stream);
+        }
+    }
     if (count_shift != 0) {
-        putc(number_correction | (spare_units >> count_shift), stream);
+        uint8_t gg = marker << (8 - count_shift) | (spare_units >> count_shift);
+        // printf("putc = %x ", gg);
+        putc(marker << (8 - count_shift) | (spare_units >> count_shift), stream);
     }
 
-    return count_write_number;
+    return count_write_byte;
 }
 
 int read_message(FILE *stream, void *buf) {
     uint8_t *buffer = (uint8_t *) buf;
-    unsigned int count_read_number = 0;
-    uint8_t number_tmp = 0;
-    uint8_t number_correction = 0;
+    unsigned int count_read_byte = 0;
+    uint8_t byte_tmp = 0;
+    uint8_t byte_shift = 0;
     unsigned int count_shift = 0;
-    int tmp = 0; // char не робит? а почему робит ансайд инт он же с 0
-    while ((tmp = getc(stream)) != EOF && tmp != spare_units) { // или ff ?
+    int tmp = 0;
+
+    for (unsigned int index = 0; (tmp = getc(stream)) != EOF; ++index) {
         tmp = (uint8_t) tmp;
         if (tmp != marker) {
-            if (count_read_number != 0) {
-                number_correction = tmp >> (8 - count_shift);
-                //printf("coo number_correction = %x ", number_correction);
-                //printf("coo number_tmp = %x\n", number_tmp);
-                uint8_t check = (number_tmp << 4) | (tmp >> 3);
-                for (int cycle = 3; cycle >= 0; cycle--) {
-                    if (((check >> cycle) & mask) == mask && check != marker) {
-                        // это работает для одного, но мы должны еще сменить новое number_tmp
-                        count_shift++;
-                        /*if (cycle == 0) {
-                            number_correction <<= 1;
-                        } else {
-                            number_correction = buffer[index] << (8 - count_shift);
-                        }*/
+            if (index == 0) {
+                for (int cycle = 7; cycle >= 0; cycle--) {
+                    if (((tmp >> cycle) & 0x01) == 0x00) {
+                        count_shift = (7 - cycle);
                         break;
                     }
                 }
-
-                if ((number_tmp | number_correction) == marker) {
-                    count_read_number--;
-                    break;
-                }
-                buffer[count_read_number - 1] = (number_tmp | number_correction);
+                continue;
             }
-            //printf("tmp = %x ", tmp);
-            number_tmp = tmp << count_shift;
-            //printf("number_tmp = %x ", number_tmp);
+            byte_shift = tmp >> (8 - count_shift);
+            if (count_read_byte != 0) {
+                buffer[count_read_byte - 1] = byte_tmp | byte_shift;
+            }
+            byte_tmp = tmp << count_shift;
+            if (byte_tmp == marker) {
+                break;
+            }
             for (int cycle = 3; cycle >= 0; cycle--) {
-                if (((number_tmp >> cycle) & mask) == mask && number_tmp != marker) {
-                    uint8_t one = number_tmp >> cycle;
-                    uint8_t two = number_tmp << (8 - cycle + 1);
-                    number_tmp = (one << cycle) | (two >> (8 - cycle));
+                if (((byte_tmp >> cycle) & mask) == mask) {
+                    uint8_t one = byte_tmp >> cycle;
+                    uint8_t two = byte_tmp << (8 - cycle + 1);
+                    byte_tmp = (one << cycle) | (two >> (8 - cycle));
                     count_shift++;
-                    /*if (cycle == 0) {
-                        number_correction <<= 1;
-                    } else {
-                        number_correction = buffer[index] << (8 - count_shift);
-                    }*/
+                    //printf("count_shift = %x ", count_shift);
+                    // if (cycle == 0) {
+                    //     byte_shift >>= 1;
+                    // } else {
+                    //     byte_shift = tmp << (8 - count_shift);
+                    // }
                     break;
                 }
             }
-            //printf("number_tmp = %x\n", number_tmp);
-            count_read_number++;
-        } else if (count_read_number > 0) {
-            number_correction = number_tmp >> (8 - count_shift);
-            buffer[count_read_number] = number_tmp | number_correction;
+            count_read_byte++;
+
+        } else if (count_read_byte > 0) {
+            // записать last
         }
     }
-    return count_read_number;
+    return count_read_byte;
 }

@@ -6,3 +6,4 @@
 
 int read_message(FILE *stream, void *buf);
 int write_message(FILE* stream, const void *buf, size_t nbyte);
+int search_mask(uint8_t *byte_check);
