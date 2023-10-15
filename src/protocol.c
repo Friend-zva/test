@@ -18,7 +18,7 @@ int search_mask(uint8_t *byte_check) {
 
 int write_message(FILE *stream, const void *buf, size_t nbyte) {
     uint8_t *buffer = (uint8_t *) buf;
-    unsigned int count_write_byte = 0;
+    int count_write_byte = 0;
     uint8_t byte_tmp = 0;
     uint8_t byte_joint = 0;
     uint8_t byte_shift = 0;
@@ -131,7 +131,7 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
 
 int read_message(FILE *stream, void *buf) {
     uint8_t *buffer = (uint8_t *) buf;
-    unsigned int count_read_byte = 0;
+    int count_read_byte = 0;
     uint8_t byte_tmp = 0;
     uint8_t byte_shift = 0;
     unsigned int count_shift = 0;
