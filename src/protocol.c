@@ -154,7 +154,7 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
         putc(marker << (8 - count_shift) | (spare_units >> count_shift), stream);
     }
 
-    return count_write_byte;
+    return nbyte;
 }
 
 int read_message(FILE *stream, void *buf) {
