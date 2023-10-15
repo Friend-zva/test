@@ -1,5 +1,5 @@
 #include <protocol.h>
-#include <inttypes.h>
+
 
 #define marker 0x7e
 #define mask 0x1f
@@ -150,7 +150,7 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
         }
     }
     if (count_shift != 0) {
-        uint8_t gg = marker << (8 - count_shift) | (spare_units >> count_shift);
+        // uint8_t gg = marker << (8 - count_shift) | (spare_units >> count_shift);
         // printf("putc = %x ", gg);
         putc(marker << (8 - count_shift) | (spare_units >> count_shift), stream);
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <inttypes.h>
 
 #define MAX_MESSAGE_LEN 256
 
