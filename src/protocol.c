@@ -163,8 +163,10 @@ int read_message(FILE *stream, void *buf) {
             for (int cycle = 3; cycle >= 0; cycle--) {
                 if (((byte_tmp >> cycle) & mask) == mask) {
                     uint8_t one = byte_tmp >> cycle;
+                    one <<= cycle;
                     uint8_t two = byte_tmp << (8 - cycle + 1);
-                    byte_tmp = (one << cycle) | (two >> (8 - cycle));
+                    two >>= (8 - cycle);
+                    byte_tmp = one | two;
                     count_shift++;
                     break;
                 }
