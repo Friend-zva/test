@@ -307,7 +307,7 @@ static void example_test_read_with_prefix_bits_1(void **state) {
             0x74, // 01110100
     };
     assert_int_equal(message_len, 11);
-    assert_memory_equal(message, expected, message_len);
+    assert_memory_equal(message, expected, 11);
     assert_string_equal(buffer_stderr, "");
 }
 
