@@ -201,9 +201,6 @@ int read_message(FILE *stream, void *buf) {
                 }
             }
             count_read_byte++;
-
-        } else if (count_read_byte > 0) {
-            // записать last
         }
     }
     return count_read_byte;
