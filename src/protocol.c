@@ -194,6 +194,7 @@ void check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift, cons
     }
 }
 
+
 int read_marker(FILE *stream, uint8_t *byte_read, int *count_shift) {
     int symbol_read = 0;
     for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
