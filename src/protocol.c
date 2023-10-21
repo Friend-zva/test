@@ -179,13 +179,12 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
                 *byte_read = ((uint8_t) symbol_read) << *count_shift;
             }
             return 0;
-        } else {
-            for (int cycle = 7; cycle >= 0; cycle--) {
-                if ((((uint8_t) symbol_read >> cycle) & 0x01) == 0x00) {
-                    *count_shift = (7 - cycle);
-                    *byte_read = (uint8_t) symbol_read << *count_shift;
-                    break;
-                }
+        }
+        for (int cycle = 7; cycle >= 0; cycle--) {
+            if ((((uint8_t) symbol_read >> cycle) & 0x01) == 0x00) {
+                *count_shift = (7 - cycle);
+                *byte_read = (uint8_t) symbol_read << *count_shift;
+                break;
             }
         }
     }
