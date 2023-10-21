@@ -22,7 +22,7 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) { // sizeof ? + 3
         byte_joint = byte_write | (byte_shift >> (len_byte / 2)) | (buffer[index] >> ((len_byte / 2) + count_shift));
         if (search_mask_byte_joint(&byte_joint, byte_shift)) {
             count_shift++;
-            byte_write = byte_joint | ((buffer[index] >> count_shift) & 0x0f);
+            byte_write = byte_joint | (buffer[index] >> count_shift);
 
             if (count_shift == len_byte) {
                 if (search_mask_byte_write(&byte_shift)) {
