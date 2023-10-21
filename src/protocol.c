@@ -1,6 +1,6 @@
 #include <protocol.h>
 
-int write_message(FILE *stream, const void *buf, size_t nbyte) { // sizeof ? + 300 в тест
+int write_message(FILE *stream, const void *buf, size_t nbyte) {
     uint8_t *buffer = (uint8_t *) buf;
     int count_write_byte = 0;
     uint8_t byte_write = 0;
@@ -9,33 +9,19 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) { // sizeof ? + 3
     int count_shift = 0;
     
     if (nbyte > MAX_MESSAGE_LEN) {
-        error("Number of byte cannot be more than MAX_MESSAGE_LEN\n");
+        error("Number of bytes cannot be more than MAX_MESSAGE_LEN\n");
         return EOF;
     }
-    // if (array_length(buffer) != nbyte) {
-    //     error("Number of element in message don't equale to nbyte\n");
-    //     return EOF;
-    // }
     putc(marker, stream);
 
-    for (unsigned long index = 0; index < nbyte; ++index) {
+    for (size_t index = 0; index < nbyte; ++index) {
         byte_joint = byte_write | (byte_shift >> (len_byte / 2)) | (buffer[index] >> ((len_byte / 2) + count_shift));
         if (search_mask_byte_joint(&byte_joint, byte_shift)) {
             count_shift++;
             byte_write = byte_joint | (buffer[index] >> count_shift);
 
-            if (count_shift == len_byte) {
-                if (search_mask_byte_write(&byte_shift)) {
-                    putc(byte_shift, stream);
-                    count_shift = 1;
-                    byte_write = buffer[index];
-                    byte_shift <<= (len_byte - count_shift);
-                } else {
-                    putc(byte_shift, stream);
-                    count_shift = 0;
-                    byte_write = buffer[index];
-                    byte_shift = 0;
-                }
+            if (check_count_shift(stream, &count_shift, &byte_shift)) {
+                byte_write = buffer[index];
             }
         } else {
             byte_write = byte_shift | (buffer[index] >> count_shift);
@@ -55,18 +41,8 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) { // sizeof ? + 3
         count_write_byte++;
         putc(byte_write, stream);
 
-        if (count_shift == len_byte) {
-            if (search_mask_byte_write(&byte_shift)) {
-                putc(byte_shift, stream);
-                count_shift = 1;
-                byte_write = byte_shift;
-                byte_shift <<= (len_byte - count_shift);
-            } else {
-                putc(byte_shift, stream);
-                count_shift = 0;
-                byte_write = byte_shift;
-                byte_shift = 0;
-            }
+        if (check_count_shift(stream, &count_shift, &byte_shift)) {
+            byte_write = byte_shift;
         }
 
         byte_write <<= (len_byte / 2);
@@ -145,7 +121,6 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
     return count_read_byte;
 }
 
-
 int search_mask_byte(const uint8_t byte_check) {
     for (int cycle = 3; cycle >= 0; cycle--) {
         if (((byte_check >> cycle) & mask) == mask) {
@@ -177,23 +152,21 @@ int search_mask_byte_write(uint8_t *byte_write) {
     return 0;
 }
 
-void check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift, const uint8_t byte_buffer, uint8_t *byte_write) {
-    if (*count_shift == len_byte) {
-        uint8_t byte_putc = *byte_shift;
-        if (search_mask_byte_write(&byte_putc)) {
-            putc(byte_putc, stream);
+void check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift) {
+    if (count_shift == len_byte) {
+        if (search_mask_byte_write(&byte_shift)) {
+            putc(*byte_shift, stream);
             *count_shift = 1;
             *byte_shift <<= (len_byte - *count_shift);
-            *byte_write = *byte_shift | (byte_buffer >> *count_shift);
         } else {
-            putc(byte_putc, stream);
+            putc(*byte_shift, stream);
             *count_shift = 0;
             *byte_shift = 0;
-            *byte_write = byte_buffer;
         }
+        return 1;
     }
+    return 0;
 }
-
 
 int read_marker(FILE *stream, uint8_t *byte_read, int *count_shift) {
     int symbol_read = 0;
