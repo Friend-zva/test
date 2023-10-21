@@ -152,7 +152,7 @@ int search_mask_byte_write(uint8_t *byte_write) {
     return 0;
 }
 
-void check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift) {
+int check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift) {
     if (count_shift == len_byte) {
         if (search_mask_byte_write(&byte_shift)) {
             putc(*byte_shift, stream);
