@@ -1,17 +1,17 @@
 #include <protocol.h>
 
 int write_message(FILE *stream, const void *buf, size_t nbyte) {
+    if (nbyte > MAX_MESSAGE_LEN) {
+        error("Number of bytes cannot be more than MAX_MESSAGE_LEN\n");
+        return EOF;
+    }
+
     uint8_t *buffer = (uint8_t *) buf;
     int count_write_byte = 0;
     uint8_t byte_write = 0;
     uint8_t byte_joint = 0;
     uint8_t byte_shift = 0;
     int count_shift = 0;
-    
-    if (nbyte > MAX_MESSAGE_LEN) {
-        error("Number of bytes cannot be more than MAX_MESSAGE_LEN\n");
-        return EOF;
-    }
     putc(marker, stream);
 
     for (size_t index = 0; index < nbyte; ++index) {
@@ -154,7 +154,7 @@ int search_mask_byte_write(uint8_t *byte_write) {
 
 int check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift) {
     if (*count_shift == len_byte) {
-        if (search_mask_byte_write(*byte_shift)) {
+        if (search_mask_byte_write(byte_shift)) {
             putc(*byte_shift, stream);
             *count_shift = 1;
             *byte_shift <<= (len_byte - *count_shift);
