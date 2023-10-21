@@ -295,9 +295,6 @@ static void example_test_read_with_prefix_bits_1(void **state) {
     }
     buffer_getc_len = 12;
     int message_len = read_message(message_stream, message);
-    for (int index = 0; index < message_len; ++index) {
-        printf("%x\n", message[index]);
-    }
     const uint8_t expected[] = { // "read_test"
             0x72, // 01110010
             0x65, // 01100101
