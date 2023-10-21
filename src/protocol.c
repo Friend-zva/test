@@ -110,7 +110,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
     }
 
     for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
-        byte_shift = (uint8_t) symbol_read >> (len_byte - count_shift);
+        byte_shift = ((uint8_t) symbol_read) >> (len_byte - count_shift);
         if ((byte_read | byte_shift) == marker) {
             if (((uint8_t) symbol_read & (spare_units >> (len_byte - count_shift))) == (spare_units >> (len_byte - count_shift))) {
                 break;
