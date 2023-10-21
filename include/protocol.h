@@ -21,3 +21,5 @@ int search_mask_byte_putc(uint8_t *byte_write);
 int check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift);
 
 int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift);
+
+int search_mask_byte_read(uint8_t *byte_read);
