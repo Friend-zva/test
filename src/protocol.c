@@ -105,13 +105,13 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         error("Cannot read message\n");
         return EOF;
     }
-    for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
-        byte_shift = byte_read >> (len_byte - count_shift);
-        if (count_read_byte != 0) {
-            buffer[count_read_byte - 1] = byte_read | byte_shift;
-        }
+    if ((symbol_read = getc(stream)) != EOF || symbol_read != marker) {
+        byte_read = (uint8_t) symbol_read;
+    }
 
-        if ((byte_shift | (((uint8_t) symbol_read) >> count_shift)) == marker) {
+    for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
+        byte_shift = (uint8_t) symbol_read >> (len_byte - count_shift);
+        if ((byte_read | byte_shift) == marker) {
             if (((uint8_t) symbol_read & (spare_units >> (len_byte - count_shift))) == (spare_units >> (len_byte - count_shift))) {
                 break;
             } else {
@@ -119,8 +119,6 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
                 return EOF;
             }
         }
-
-        byte_read = (uint8_t) symbol_read << count_shift;
 
         for (int cycle = 3; cycle >= 0; cycle--) {
             if (((byte_read >> cycle) & mask) == mask) {
@@ -131,8 +129,12 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
                 break;
             }
         }
+        
+        byte_shift = (uint8_t) symbol_read >> (len_byte - count_shift);
+        
+        buffer[count_read_byte++] = byte_read | byte_shift;
 
-        count_read_byte++;
+        byte_read = (uint8_t) symbol_read << count_shift;
     }
     if (ferror(stream)) {
         error("Cannot read symbol\n");
@@ -141,6 +143,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
 
     return count_read_byte;
 }
+
 
 int search_mask_byte(const uint8_t byte_check) {
     for (int cycle = 3; cycle >= 0; cycle--) {
