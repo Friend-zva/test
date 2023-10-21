@@ -120,8 +120,6 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
             }
         }
 
-        byte_shift = byte_read << (len_byte - count_shift);
-
         byte_read = (uint8_t) symbol_read << count_shift;
 
         for (int cycle = 3; cycle >= 0; cycle--) {
