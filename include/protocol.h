@@ -21,4 +21,4 @@ int search_mask_byte_write(uint8_t *byte_write);
 
 void check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift, const uint8_t byte_buffer, uint8_t *byte_write);
 
-int read_mask(FILE *stream, uint8_t *byte_shift, int *count_shift);
+int read_marker(FILE *stream, uint8_t *byte_shift, int *count_shift);
