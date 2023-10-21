@@ -110,9 +110,8 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
             byte_read = (uint8_t) symbol_read;
         }
     }
-
+    
     for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
-
         byte_shift = ((uint8_t) symbol_read) >> (len_byte - count_shift);
         if ((byte_read | byte_shift) == marker) {
             if (((uint8_t) symbol_read & (spare_units >> (len_byte - count_shift))) == (spare_units >> (len_byte - count_shift))) {
@@ -145,6 +144,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
 
     return count_read_byte;
 }
+
 
 int search_mask_byte(const uint8_t byte_check) {
     for (int cycle = 3; cycle >= 0; cycle--) {
@@ -194,12 +194,13 @@ void check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift, cons
     }
 }
 
-
 int read_marker(FILE *stream, uint8_t *byte_read, int *count_shift) {
     int symbol_read = 0;
     for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
         if ((((uint8_t) symbol_read) >> *count_shift | *byte_read) == marker) {
-            *byte_read = ((uint8_t) symbol_read) << *count_shift;
+            if (*count_shift != 0) {
+                *byte_read = ((uint8_t) symbol_read) << *count_shift;
+            }
             return 0;
         } else {
             for (int cycle = 7; cycle >= 0; cycle--) {
