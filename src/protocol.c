@@ -7,7 +7,7 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
     }
 
     if (putc(marker, stream) == EOF) {
-        error("Cannot write symbol\n");
+        error("Cannot write byte\n");
         return EOF;
     }
 
@@ -46,7 +46,7 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
         }
 
         if (putc(byte_write, stream) == EOF) {
-            error("Cannot write symbol\n");
+            error("Cannot write byte\n");
             return EOF;
         }
         count_byte_write++;
@@ -97,7 +97,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
 
             byte_read = (uint8_t) symbol_read;
         } else {
-            error("Cannot read symbol\n");
+            error("Cannot read byte\n");
             return EOF;
         }
     }
@@ -130,7 +130,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         byte_read = ((uint8_t) symbol_read) << count_shift;
     }
     if (ferror(stream)) {
-        error("Cannot read symbol\n");
+        error("Cannot read byte\n");
         return EOF;
     }
 
@@ -193,25 +193,25 @@ int check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift) {
 int write_end_message(FILE *stream, const int count_shift, const uint8_t byte_write, const uint8_t byte_shift) {
     if (count_shift == 0) {
         if (putc(marker, stream) == EOF) {
-            error("Cannot write symbol\n");
+            error("Cannot write byte\n");
             return EOF;
         }
     } else if (count_shift == len_byte) {
         if (putc(byte_write, stream) == EOF) {
-            error("Cannot write symbol\n");
+            error("Cannot write byte\n");
             return EOF;
         }
         if (putc(marker, stream) == EOF) {
-            error("Cannot write symbol\n");
+            error("Cannot write byte\n");
             return EOF;
         }
     } else {
         if (putc(byte_shift | marker >> count_shift, stream) == EOF) {
-            error("Cannot write symbol\n");
+            error("Cannot write byte\n");
             return EOF;
         }
         if (putc(marker << (len_byte - count_shift) | (spare_units >> count_shift), stream) == EOF) {
-            error("Cannot write symbol\n");
+            error("Cannot write byte\n");
             return EOF;
         }
     }
@@ -239,7 +239,7 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
         }
     }
     if (ferror(stream)) {
-        error("Cannot read symbol\n");
+        error("Cannot read byte\n");
         return EOF;
     }
 
@@ -249,8 +249,9 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
 
 int search_byte_incorrect(uint8_t byte_incorrect) {
     for (int i = 0; i < 2; ++i) {
-        if ((byte_incorrect >> i & marker >> 1) == marker >> 1) {
+        if ((byte_incorrect >> i & 0x3f) == 0x3f) {
             error("Incorrect bit sequence\n");
+            return EOF;
         }
     }
     return 0;
