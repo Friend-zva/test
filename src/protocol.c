@@ -91,6 +91,10 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
             if (symbol_read == marker) {
                 return count_read_byte;
             }
+            if (search_byte_incorrect(symbol_read)) {
+                return EOF;
+            }
+
             byte_read = (uint8_t) symbol_read;
         } else {
             error("Cannot read symbol\n");
@@ -109,6 +113,10 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
                 error("Uncorrect message\n");
                 return EOF;
             }
+        }
+
+        if (search_byte_incorrect(byte_read | byte_shift)) {
+            return EOF;
         }
 
         byte_shift = (uint8_t) symbol_read >> (len_byte - count_shift);
@@ -213,6 +221,7 @@ int write_end_message(FILE *stream, const int count_shift, const uint8_t byte_wr
 
 int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
     int symbol_read = 0;
+    *count_shift = len_byte;
 
     for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
         if ((((uint8_t) symbol_read) >> (len_byte - *count_shift) | *byte_read) == marker) {
@@ -236,6 +245,15 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
 
     error("Cannot read start marker\n");
     return EOF;
+}
+
+int search_byte_incorrect(uint8_t byte_incorrect) {
+    for (int i = 0; i < 2; ++i) {
+        if ((byte_incorrect >> i & marker >> 1) == marker >> 1) {
+            error("Incorrect bit sequence\n");
+        }
+    }
+    return 0;
 }
 
 int search_mask_byte_read(uint8_t *byte_read) {

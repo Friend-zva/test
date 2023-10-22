@@ -24,4 +24,6 @@ int write_end_message(FILE *stream, const int count_shift, const uint8_t byte_wr
 
 int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift);
 
+int search_byte_incorrect(uint8_t byte_incorrect);
+
 int search_mask_byte_read(uint8_t *byte_read);
