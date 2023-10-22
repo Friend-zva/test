@@ -87,7 +87,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
     int symbol_read = 0;
     uint8_t byte_shift = 0;
 
-    if (byte_read == 0) {
+    if (!byte_read) {
         if ((symbol_read = getc(stream)) != EOF && symbol_read != marker) {
             byte_read = (uint8_t) symbol_read;
         }
@@ -99,7 +99,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         if ((byte_read | byte_shift) == marker) {
             uint8_t byte_units = spare_units >> (len_byte - count_shift);
             if (((uint8_t) symbol_read & byte_units) == byte_units) {
-                break;
+                return count_read_byte;
             } else {
                 error("Uncorrect message\n");
                 return EOF;
@@ -118,10 +118,11 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
     }
     if (ferror(stream)) {
         error("Cannot read symbol\n");
-        return -1;
+        return EOF;
     }
 
-    return count_read_byte;
+    error("Cannot read end marker\n");
+    return EOF;
 }
 
 int search_mask_byte(const uint8_t byte_check) {
@@ -130,6 +131,7 @@ int search_mask_byte(const uint8_t byte_check) {
             return cycle;
         }
     }
+
     return -1;
 }
 
@@ -141,6 +143,7 @@ int search_mask_byte_joint(uint8_t *byte_joint, const uint8_t byte_shift) {
         *byte_joint = part_one << ((len_byte / 2) + cycle) | part_two >> ((len_byte / 2) - cycle + 1);
         return 1;
     }
+
     return 0;
 }
 
@@ -153,6 +156,7 @@ int search_mask_byte_write(uint8_t *byte_write) {
         *byte_write = part_one << cycle | part_two >> (len_byte - cycle + 1);
         return 1;
     }
+
     return 0;
 }
 
@@ -222,7 +226,7 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
     }
     if (ferror(stream)) {
         error("Cannot read symbol\n");
-        return -1;
+        return EOF;
     }
 
     return 1;
