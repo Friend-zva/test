@@ -250,10 +250,12 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
 int search_byte_incorrect(uint8_t byte_incorrect) {
     for (int i = 0; i < 2; ++i) {
         if ((byte_incorrect >> i & 0x3f) == 0x3f) {
+            printf("\n\nwhy?????\n\n");
             error("Incorrect bit sequence\n");
             return EOF;
         }
     }
+
     return 0;
 }
 
