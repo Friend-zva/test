@@ -88,7 +88,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
     uint8_t byte_shift = 0;
 
     if (byte_read == 0) {
-        if ((symbol_read = getc(stream)) != EOF && symbol_read != marker) {
+        if ((symbol_read = getc(stream)) != EOF) {
             byte_read = (uint8_t) symbol_read;
         }
     }
