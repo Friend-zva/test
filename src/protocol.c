@@ -118,7 +118,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         if (search_byte_incorrect(byte_read | byte_shift)) {
             return EOF;
         }
-
+        printf("\n\nhelllloo?????\n\n");
         byte_shift = (uint8_t) symbol_read >> (len_byte - count_shift);
         byte_read |= byte_shift;
         
