@@ -15,7 +15,7 @@ int search_mask_byte(const uint8_t byte_check);
 
 int search_mask_byte_joint(uint8_t *byte_joint);
 
-int check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift);
+// int check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift);
 
 int search_mask_byte_write(uint8_t *byte_write);
 
