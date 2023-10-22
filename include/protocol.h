@@ -1,13 +1,15 @@
 #pragma once
 
+#include <stdio.h>
+#include <inttypes.h>
+
 #define error(...) (fprintf(stderr, __VA_ARGS__))
 
 #define MAX_MESSAGE_LEN 256
-
+#define len_byte 8
 #define marker 0x7e
 #define mask 0x1f
 #define spare_units 0xff
-#define len_byte 8
 
 int search_mask_byte(const uint8_t byte_check);
 
