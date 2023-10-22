@@ -16,9 +16,11 @@ int search_mask_byte(const uint8_t byte_check);
 
 int search_mask_byte_joint(uint8_t *byte_joint, const uint8_t byte_shift);
 
-int search_mask_byte_putc(uint8_t *byte_write);
+int search_mask_byte_write(uint8_t *byte_write);
 
 int check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift);
+
+int write_end_message(FILE *stream, const int count_shift, const uint8_t byte_write, const uint8_t byte_shift);
 
 int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift);
 
