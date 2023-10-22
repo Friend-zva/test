@@ -19,7 +19,8 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
     int count_shift = 0;
 
     for (size_t index = 0; index < nbyte; ++index) {
-        byte_joint = byte_write | (byte_shift >> (len_byte / 2)) | (buffer[index] >> ((len_byte / 2) + count_shift));
+        byte_joint = byte_write | (byte_shift >> (len_byte / 2)) 
+                                | (buffer[index] >> ((len_byte / 2) + count_shift));
         
         if (search_mask_byte_joint(&byte_joint, byte_shift)) {
             count_shift++;
@@ -73,7 +74,7 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
     return count_byte_write;
 }
 
-int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалось прочитать + не начинать пока не встретил маркер иначе eof + в конце не может быть более 1 нуля + read_twice
+int read_message(FILE *stream, void *buf) {
     uint8_t byte_read = 0;
     int count_shift = 0;
 
@@ -154,11 +155,12 @@ int search_mask_byte(const uint8_t byte_check) {
 
 int search_mask_byte_joint(uint8_t *byte_joint, const uint8_t byte_shift) {
     int cycle = search_mask_byte(*byte_joint);
-    
+
     if (cycle != -1) {
         uint8_t part_one = *byte_joint >> cycle;
         uint8_t part_two = byte_shift << ((len_byte / 2) - cycle);
-        *byte_joint = part_one << ((len_byte / 2) + cycle) | part_two >> ((len_byte / 2) - cycle + 1);
+        *byte_joint = part_one << ((len_byte / 2) + cycle) 
+                    | part_two >> ((len_byte / 2) - cycle + 1);
         return 1;
     }
 
@@ -181,21 +183,29 @@ int search_mask_byte_write(uint8_t *byte_write) {
 int check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift) {
     if (*count_shift == len_byte) {
         if (search_mask_byte_write(byte_shift)) {
-            putc(*byte_shift, stream);
+            if (putc(*byte_shift, stream) == EOF) {
+                error("Cannot write byte\n");
+                return EOF;
+            }
             *count_shift = 1;
             *byte_shift <<= (len_byte - *count_shift);
         } else {
-            putc(*byte_shift, stream);
+            if (putc(*byte_shift, stream) == EOF) {
+                error("Cannot write byte\n");
+                return EOF;
+            }
             *count_shift = 0;
             *byte_shift = 0;
         }
+
         return 1;
     }
 
     return 0;
 }
 
-int write_end_message(FILE *stream, const int count_shift, const uint8_t byte_write, const uint8_t byte_shift) {
+int write_end_message(FILE *stream, const int count_shift, 
+                      const uint8_t byte_write, const uint8_t byte_shift) {
     if (count_shift == 0) {
         if (putc(marker, stream) == EOF) {
             error("Cannot write byte\n");
@@ -215,7 +225,8 @@ int write_end_message(FILE *stream, const int count_shift, const uint8_t byte_wr
             error("Cannot write byte\n");
             return EOF;
         }
-        if (putc(marker << (len_byte - count_shift) | (spare_units >> count_shift), stream) == EOF) {
+        if (putc(marker << (len_byte - count_shift) 
+              | (spare_units >> count_shift), stream) == EOF) {
             error("Cannot write byte\n");
             return EOF;
         }
