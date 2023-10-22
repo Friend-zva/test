@@ -101,7 +101,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         if ((byte_read | byte_shift) == marker) {
             uint8_t byte_units = spare_units >> (len_byte - count_shift);
             if (((uint8_t) symbol_read & byte_units) == byte_units) {
-                return count_read_byte;
+                break;
             } else {
                 error("Uncorrect message\n");
                 return EOF;
@@ -123,8 +123,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         return EOF;
     }
 
-    error("Cannot read end marker\n");
-    return EOF;
+    return count_read_byte;
 }
 
 int search_mask_byte(const uint8_t byte_check) {
@@ -221,7 +220,7 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
         for (int cycle = 7; cycle >= 0; cycle--) {
             if ((((uint8_t) symbol_read >> cycle) & 0x01) == 0x00) {
                 *count_shift = (7 - cycle);
-                *byte_read = (uint8_t) symbol_read << *count_shift;
+                *byte_read = ((uint8_t) symbol_read) << *count_shift;
                 break;
             }
         }
