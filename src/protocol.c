@@ -101,7 +101,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         if ((byte_read | byte_shift) == marker) {
             uint8_t byte_units = spare_units >> (len_byte - count_shift);
             if (((uint8_t) symbol_read & byte_units) == byte_units) {
-                break;
+                return count_read_byte;
             } else {
                 error("Uncorrect message\n");
                 return EOF;
