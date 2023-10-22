@@ -216,9 +216,6 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
 
     for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
         if ((((uint8_t) symbol_read) >> *count_shift | *byte_read) == marker) {
-            if (*count_shift != 0) {
-                *byte_read = ((uint8_t) symbol_read) << *count_shift;
-            }
             return 0;
         }
         for (int cycle = 7; cycle >= 0; cycle--) {
