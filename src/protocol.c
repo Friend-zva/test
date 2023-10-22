@@ -126,7 +126,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         if (search_mask_byte_read(&byte_read)) {
             count_shift++;
             if (count_shift == len_byte) {
-                count_shift == 0;
+                count_shift = 0;
             }
         }
 
