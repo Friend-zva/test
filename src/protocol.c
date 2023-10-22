@@ -22,13 +22,18 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
         byte_joint = byte_write | (byte_shift >> (len_byte / 2)) 
                                 | (buffer[index] >> ((len_byte / 2) + count_shift));
         
-        if (search_mask_byte_joint(&byte_joint, byte_shift)) {
+        if (search_mask_byte_joint(&byte_joint)) {
             count_shift++;
-            byte_write = byte_joint | (buffer[index] >> count_shift);
 
-            if (check_count_shift(stream, &count_shift, &byte_shift)) {
-                byte_write = buffer[index];
+            if (count_shift <= 4) {
+                uint8_t part_two = buffer[index] << ((len_byte / 2) - (count_shift - 1));
+                byte_joint |= part_two >> ((len_byte / 2) - (count_shift - 1) + count_shift);
+            } else {
+                uint8_t part_two = byte_shift << (len_byte / 2);
+                byte_joint |= part_two >> ((len_byte / 2) + 1) | buffer[index] >> (count_shift);
             }
+            
+            byte_write = byte_joint;
         } else {
             byte_write = byte_shift | (buffer[index] >> count_shift);
         }
@@ -60,8 +65,17 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
     }
     byte_joint = byte_write | (byte_shift >> (len_byte / 2));
     
-    if (search_mask_byte_joint(&byte_joint, byte_shift)) {
+    if (search_mask_byte_joint(&byte_joint)) {
         count_shift++;
+        if (count_shift > 4) {
+            uint8_t part_two = byte_shift << (len_byte / 2);
+            byte_joint |= part_two >> ((len_byte / 2) + 1);
+
+            if (search_mask_byte_write(&byte_joint)) {
+                count_shift++;
+            }
+        }
+
         byte_write = byte_joint | (marker >> count_shift);
     } else {
         byte_write = (byte_joint << (len_byte / 2)) | (marker >> count_shift);
@@ -103,7 +117,7 @@ int read_message(FILE *stream, void *buf) {
         }
     }
     
-    for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
+    for (int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
         byte_shift = ((uint8_t) symbol_read) >> (len_byte - count_shift);
         
         if ((byte_read | byte_shift) == marker) {
@@ -153,14 +167,14 @@ int search_mask_byte(const uint8_t byte_check) {
     return -1;
 }
 
-int search_mask_byte_joint(uint8_t *byte_joint, const uint8_t byte_shift) {
+int search_mask_byte_joint(uint8_t *byte_joint) {
     int cycle = search_mask_byte(*byte_joint);
 
     if (cycle != -1) {
-        uint8_t part_one = *byte_joint >> cycle;
-        uint8_t part_two = byte_shift << ((len_byte / 2) - cycle);
-        *byte_joint = part_one << ((len_byte / 2) + cycle) 
-                    | part_two >> ((len_byte / 2) - cycle + 1);
+        uint8_t part_one = *byte_joint << (len_byte / 2);
+        uint8_t part_two = part_one << ((len_byte / 2) - cycle);
+        part_one >>= (len_byte - ((len_byte / 2) - cycle));
+        *byte_joint = part_one << (len_byte - ((len_byte / 2) - cycle)) | part_two >> ((len_byte / 2) - cycle + 1);
         return 1;
     }
 
@@ -238,7 +252,7 @@ int write_end_message(FILE *stream, const int count_shift,
 int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
     int symbol_read = 0;
 
-    for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
+    for (int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
         if ((((uint8_t) symbol_read) >> *count_shift | *byte_read) == marker) {
             if (*count_shift) {
                 *count_shift = (len_byte - *count_shift);
