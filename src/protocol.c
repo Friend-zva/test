@@ -227,17 +227,17 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
     int symbol_read = 0;
 
     for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
-        if ((((uint8_t) symbol_read) >> (len_byte - (*count_shift + 1)) | *byte_read) == marker) {
+        if ((((uint8_t) symbol_read) >> *count_shift | *byte_read) == marker) {
             if (*count_shift) {
-                *count_shift = (7 - *count_shift);
+                *count_shift = (len_byte - *count_shift);
                 *byte_read = ((uint8_t) symbol_read) << *count_shift;
             }
             return 0;
         }
         for (int cycle = 7; cycle >= 0; cycle--) {
             if ((((uint8_t) symbol_read >> cycle) & 0x01) == 0x00) {
-                *count_shift = cycle;
-                *byte_read = ((uint8_t) symbol_read) << (7 - *count_shift);
+                *count_shift = cycle + 1;
+                *byte_read = ((uint8_t) symbol_read) << (len_byte - *count_shift);
                 break;
             }
         }
