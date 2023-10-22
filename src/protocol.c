@@ -125,6 +125,9 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         
         if (search_mask_byte_read(&byte_read)) {
             count_shift++;
+            if (count_shift == len_byte) {
+                count_shift == 0;
+            }
         }
 
         buffer[count_byte_read++] = byte_read;
@@ -222,19 +225,19 @@ int write_end_message(FILE *stream, const int count_shift, const uint8_t byte_wr
 
 int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
     int symbol_read = 0;
-    *count_shift = len_byte;
 
     for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
-        if ((((uint8_t) symbol_read) >> (len_byte - *count_shift) | *byte_read) == marker) {
+        if ((((uint8_t) symbol_read) >> (len_byte - (*count_shift + 1)) | *byte_read) == marker) {
             if (*count_shift) {
+                *count_shift = (7 - *count_shift);
                 *byte_read = ((uint8_t) symbol_read) << *count_shift;
             }
             return 0;
         }
         for (int cycle = 7; cycle >= 0; cycle--) {
             if ((((uint8_t) symbol_read >> cycle) & 0x01) == 0x00) {
-                *count_shift = (7 - cycle);
-                *byte_read = ((uint8_t) symbol_read) << *count_shift;
+                *count_shift = cycle;
+                *byte_read = ((uint8_t) symbol_read) << (7 - *count_shift);
                 break;
             }
         }
