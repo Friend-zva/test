@@ -88,6 +88,9 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
 
     if (!byte_read) {
         if ((symbol_read = getc(stream)) != EOF) {
+            if (symbol_read == marker) {
+                return count_read_byte;
+            }
             byte_read = (uint8_t) symbol_read;
         } else {
             error("Cannot read symbol\n");
@@ -123,7 +126,8 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         return EOF;
     }
 
-    return count_read_byte;
+    error("Cannot read start marker\n");
+    return EOF;
 }
 
 int search_mask_byte(const uint8_t byte_check) {
