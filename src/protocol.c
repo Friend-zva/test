@@ -91,7 +91,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
             if (symbol_read == marker) {
                 return count_byte_read;
             }
-            if (search_byte_incorrect(symbol_read)) {
+            if (search_byte_incorrect((uint8_t) symbol_read)) {
                 return EOF;
             }
 
@@ -107,10 +107,11 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         
         if ((byte_read | byte_shift) == marker) {
             uint8_t byte_units = spare_units >> (len_byte - count_shift);
+            
             if (((uint8_t) symbol_read & byte_units) == byte_units) {
                 return count_byte_read;
             } else {
-                error("Uncorrect message\n");
+                error("The payload contains a non-integer number of bytes\n");
                 return EOF;
             }
         }
@@ -118,7 +119,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         if (search_byte_incorrect(byte_read | byte_shift)) {
             return EOF;
         }
-        printf("\n\nhelllloo?????\n\n");
+
         byte_shift = (uint8_t) symbol_read >> (len_byte - count_shift);
         byte_read |= byte_shift;
         
@@ -250,7 +251,6 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
 int search_byte_incorrect(uint8_t byte_incorrect) {
     for (int i = 0; i < 2; ++i) {
         if ((byte_incorrect >> i & 0x3f) == 0x3f) {
-            printf("\n\nwhy?????\n\n");
             error("Incorrect bit sequence\n");
             return EOF;
         }
