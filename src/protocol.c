@@ -82,14 +82,14 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
     }
     
     uint8_t *buffer = (uint8_t *) buf;
-    int count_read_byte = 0;
+    int count_byte_read = 0;
     int symbol_read = 0;
     uint8_t byte_shift = 0;
 
     if (!byte_read) {
         if ((symbol_read = getc(stream)) != EOF) {
             if (symbol_read == marker) {
-                return count_read_byte;
+                return count_byte_read;
             }
             if (search_byte_incorrect(symbol_read)) {
                 return EOF;
@@ -108,7 +108,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
         if ((byte_read | byte_shift) == marker) {
             uint8_t byte_units = spare_units >> (len_byte - count_shift);
             if (((uint8_t) symbol_read & byte_units) == byte_units) {
-                return count_read_byte;
+                return count_byte_read;
             } else {
                 error("Uncorrect message\n");
                 return EOF;
@@ -126,7 +126,7 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
             count_shift++;
         }
 
-        buffer[count_read_byte++] = byte_read;
+        buffer[count_byte_read++] = byte_read;
         byte_read = ((uint8_t) symbol_read) << count_shift;
     }
     if (ferror(stream)) {

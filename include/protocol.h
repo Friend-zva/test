@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#define error(...) (fprintf(stderr, __VA_ARGS__))
+#define error(...) (fprintf(stdout, __VA_ARGS__))
 
 #define MAX_MESSAGE_LEN 256
 
