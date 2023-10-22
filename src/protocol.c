@@ -154,6 +154,7 @@ int search_mask_byte(const uint8_t byte_check) {
 
 int search_mask_byte_joint(uint8_t *byte_joint, const uint8_t byte_shift) {
     int cycle = search_mask_byte(*byte_joint);
+    
     if (cycle != -1) {
         uint8_t part_one = *byte_joint >> cycle;
         uint8_t part_two = byte_shift << ((len_byte / 2) - cycle);
@@ -234,6 +235,10 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
             }
             return 0;
         }
+        if (*count_shift) {
+            break;
+        }
+
         for (int cycle = 7; cycle >= 0; cycle--) {
             if ((((uint8_t) symbol_read >> cycle) & 0x01) == 0x00) {
                 *count_shift = cycle + 1;
@@ -253,7 +258,7 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
 
 int search_byte_incorrect(uint8_t byte_incorrect) {
     for (int i = 0; i < 2; ++i) {
-        if ((byte_incorrect >> i & 0x3f) == 0x3f) {
+        if ((byte_incorrect >> i & spare_units >> 2) == spare_units >> 2) {
             error("Incorrect bit sequence\n");
             return EOF;
         }
