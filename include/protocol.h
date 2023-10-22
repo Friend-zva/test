@@ -1,8 +1,5 @@
 #pragma once
 
-#include <stdio.h>
-#include <inttypes.h>
-
 #define error(...) (fprintf(stderr, __VA_ARGS__))
 
 #define MAX_MESSAGE_LEN 256
@@ -16,9 +13,9 @@ int search_mask_byte(const uint8_t byte_check);
 
 int search_mask_byte_joint(uint8_t *byte_joint, const uint8_t byte_shift);
 
-int search_mask_byte_write(uint8_t *byte_write);
-
 int check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift);
+
+int search_mask_byte_write(uint8_t *byte_write);
 
 int write_end_message(FILE *stream, const int count_shift, const uint8_t byte_write, const uint8_t byte_shift);
 

@@ -167,19 +167,6 @@ int search_mask_byte_joint(uint8_t *byte_joint, const uint8_t byte_shift) {
     return 0;
 }
 
-int search_mask_byte_write(uint8_t *byte_write) {
-    int cycle = search_mask_byte(*byte_write);
-
-    if (cycle != -1) {
-        uint8_t part_one = *byte_write >> cycle;
-        uint8_t part_two = *byte_write << (len_byte - cycle);
-        *byte_write = part_one << cycle | part_two >> (len_byte - cycle + 1);
-        return 1;
-    }
-
-    return 0;
-}
-
 int check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift) {
     if (*count_shift == len_byte) {
         if (search_mask_byte_write(byte_shift)) {
@@ -198,6 +185,19 @@ int check_count_shift(FILE *stream, int *count_shift, uint8_t *byte_shift) {
             *byte_shift = 0;
         }
 
+        return 1;
+    }
+
+    return 0;
+}
+
+int search_mask_byte_write(uint8_t *byte_write) {
+    int cycle = search_mask_byte(*byte_write);
+
+    if (cycle != -1) {
+        uint8_t part_one = *byte_write >> cycle;
+        uint8_t part_two = *byte_write << (len_byte - cycle);
+        *byte_write = part_one << cycle | part_two >> (len_byte - cycle + 1);
         return 1;
     }
 
