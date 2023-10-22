@@ -78,7 +78,6 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
     int count_shift = 0;
 
     if (read_start_message(stream, &byte_read, &count_shift)) {
-        error("Cannot read message\n");
         return EOF;
     }
     
@@ -87,9 +86,12 @@ int read_message(FILE *stream, void *buf) { // 111111 -> eof + не удалос
     int symbol_read = 0;
     uint8_t byte_shift = 0;
 
-    if (byte_read == 0) {
+    if (!byte_read) {
         if ((symbol_read = getc(stream)) != EOF) {
             byte_read = (uint8_t) symbol_read;
+        } else {
+            error("Cannot read symbol\n");
+            return EOF;
         }
     }
     
@@ -229,6 +231,7 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
         return EOF;
     }
 
+    error("Cannot read start marker\n");
     return 1;
 }
 
