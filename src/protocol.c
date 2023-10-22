@@ -215,7 +215,7 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
     int symbol_read = 0;
 
     for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
-        if ((((uint8_t) symbol_read) >> *count_shift | *byte_read) == marker) {
+        if ((((uint8_t) symbol_read) >> (len_byte - *count_shift) | *byte_read) == marker) {
             if (*count_shift) {
                 *byte_read = ((uint8_t) symbol_read) << *count_shift;
             }
@@ -235,7 +235,7 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
     }
 
     error("Cannot read start marker\n");
-    return 1;
+    return EOF;
 }
 
 int search_mask_byte_read(uint8_t *byte_read) {
