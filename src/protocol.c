@@ -121,14 +121,15 @@ int read_message(FILE *stream, void *buf) {
                     count_bits_check = 1;
                     index_start_read = index;
                 }
+
                 count_bits_check = 1;
-            } else if (count_bits_read) {
+            } else if (count_bits_check) {
                 byte_check_units = (byte_check_units << 1) | unit;
                 count_bits_check++;
             }
         }
 
-        for (int index = index_start_read; index >= 0; index--) {
+        for (int index = index_start_read; index > 0; index--) {
             if (((byte_read_tmp >> index) & unit) == unit) {
                 byte_check_units = (byte_check_units << 1) | unit;
                 count_bits_check++;
@@ -136,8 +137,9 @@ int read_message(FILE *stream, void *buf) {
                 count_bits_read++;
             } else {
                 if (count_bits_check == (len_byte - 1)) {
-                    if (!count_bits_read) {
-                        error("The payload contains a non-integer number of bytes\n");
+                    if (count_bits_check == len_incorrect_byte 
+                    && (byte_check_units & incorrect_byte) == incorrect_byte) {
+                        error("Incorrect bit sequence\n");
                         return EOF;
                     }
                 }
@@ -186,7 +188,7 @@ int read_message(FILE *stream, void *buf) {
                 }
             } else {
                 if (count_bits_check == (len_byte - 1)) {
-                    if (!count_bits_read) {
+                    if (count_bits_read != (len_byte - 1)) {
                         error("The payload contains a non-integer number of bytes\n");
                         return EOF;
                     }
