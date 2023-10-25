@@ -349,11 +349,11 @@ int check_start_message() {
 }
 
 int check_bit_unit(uint8_t *byte_read, uint8_t *byte_check_units, const uint8_t byte_read_tmp, 
-                   int *count_bits_read, int *count_bits_check, int index) {
+                                       int *count_bits_read, int *count_bits_check, int index) {
     if (((byte_read_tmp >> index) & unit) == unit) {
-        *count_bits_read++;
+        (*count_bits_read)++;
         *byte_read = (*byte_read << 1) | unit;
-        *count_bits_check++;
+        (*count_bits_check)++;
         *byte_check_units = (*byte_check_units << 1) | unit;
 
         if ((*byte_read & incorrect_byte) == incorrect_byte) {
@@ -370,7 +370,7 @@ int check_bit_unit(uint8_t *byte_read, uint8_t *byte_check_units, const uint8_t 
 void correct_bytes(uint8_t *byte_read, uint8_t *byte_check_units, 
                    int *count_bits_read, int *count_bits_check) {
     if ((*byte_check_units & mask) != mask) {
-        *count_bits_read++;
+        (*count_bits_read)++;
         *byte_read <<= 1;
     }
 
