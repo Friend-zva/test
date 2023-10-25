@@ -36,4 +36,4 @@ int write_end_message(FILE *stream, const uint8_t byte_write, const int count_sh
 
 int read_start_message(FILE *stream, uint8_t *byte_read, int *count_bits_read);
 
-int check_end_message(const u_int16_t byte_end_message, const int len_spare_units);
+int check_end_message(const uint8_t byte_end_message, const int len_spare_units);

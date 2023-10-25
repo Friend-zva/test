@@ -361,7 +361,7 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_bits_read) {
     return EOF;
 }
 
-int check_end_message(const u_int16_t byte_end_message, const int len_spare_units) {
+int check_end_message(const uint8_t byte_end_message, const int len_spare_units) {
     for (int index = 0; index < len_spare_units; ++index) {
         if ((byte_end_message & unit) != unit) {
             error("Incorrect end message\n");
