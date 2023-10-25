@@ -106,16 +106,63 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
 int read_message(FILE *stream, void *buf) {
     uint8_t byte_read = zero; 
     int count_bits_read = 0; // count significant bits in byte_read
+    uint8_t byte_check_units = zero;
+    int count_bits_check = 0; // count significant bits in byte_check_units
+    int symbol_read = 0;
 
-    if (read_start_message(stream, &byte_read, &count_bits_read)) {
+    for (int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
+        uint8_t byte_read_tmp = (uint8_t) symbol_read;
+        int index_start_read = EOF;
+
+        for (int index = 7; index >= 0; index--) {
+            if (((byte_read_tmp >> index) & unit) == zero) {
+                if (count_bits_check) {
+                    byte_check_units = zero;
+                    count_bits_check = 1;
+                    index_start_read = index;
+                }
+                count_bits_check = 1;
+            } else if (count_bits_read) {
+                byte_check_units = (byte_check_units << 1) | unit;
+                count_bits_check++;
+            }
+        }
+
+        for (int index = index_start_read; index >= 0; index--) {
+            if (((byte_read_tmp >> index) & unit) == unit) {
+                byte_check_units = (byte_check_units << 1) | unit;
+                count_bits_check++;
+                byte_read = (byte_read << 1) | unit;
+                count_bits_read++;
+            } else {
+                if (count_bits_check == (len_byte - 1)) {
+                    if (!count_bits_read) {
+                        error("The payload contains a non-integer number of bytes\n");
+                        return EOF;
+                    }
+                }
+
+                if ((byte_check_units & mask) != mask) {
+                    count_bits_read++;
+                    byte_read <<= 1;
+                }
+
+                byte_check_units = zero;
+                count_bits_check = 1;
+            }
+        }
+
+        if (index_start_read != EOF) {
+            break;
+        }
+    }
+    if (feof(stream)) {
+        error("Cannot read start marker\n");
         return EOF;
     }
 
     uint8_t *buffer = (uint8_t *) buf;
     int count_byte_read = 0;
-    uint8_t byte_check_units = byte_read;
-    int count_bits_check = count_bits_read; // count significant bits in byte_check_units
-    int symbol_read = 0;
 
     for (int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
         uint8_t byte_read_tmp = (uint8_t) symbol_read;
@@ -328,37 +375,6 @@ int write_end_message(FILE *stream, const uint8_t byte_write, const int count_sh
     }
 
     return 0;
-}
-
-int read_start_message(FILE *stream, uint8_t *byte_read, int *count_bits_read) {
-    int symbol_read = 0;
-
-    for (int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
-        if (((((uint8_t) symbol_read) >> *count_bits_read) | *byte_read) == marker) {
-            if (*count_bits_read) {
-                *byte_read = ((uint8_t) symbol_read) << (len_byte - *count_bits_read);
-            }
-            return 0;
-        }
-        if (*count_bits_read) {
-            break;
-        }
-
-        for (int index = 7; index >= 0; index--) {
-            if ((((uint8_t) symbol_read >> index) & unit) == zero) {
-                *count_bits_read = index + 1;
-                *byte_read = ((uint8_t) symbol_read) << (len_byte - *count_bits_read);
-                break;
-            }
-        }
-    }
-    if (ferror(stream)) {
-        error("Cannot read byte\n");
-        return EOF;
-    }
-
-    error("Cannot read start marker\n");
-    return EOF;
 }
 
 int check_end_message(const uint8_t byte_end_message, const int len_spare_units) {

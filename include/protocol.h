@@ -34,6 +34,4 @@ int check_count_shift_last_write(FILE *stream, uint8_t *byte_write, const uint8_
 
 int write_end_message(FILE *stream, const uint8_t byte_write, const int count_shift);
 
-int read_start_message(FILE *stream, uint8_t *byte_read, int *count_bits_read);
-
 int check_end_message(const uint8_t byte_end_message, const int len_spare_units);
