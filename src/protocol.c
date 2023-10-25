@@ -117,38 +117,23 @@ int read_message(FILE *stream, void *buf) {
         for (int index = 7; index >= 0; index--) {
             if (((byte_read_tmp >> index) & unit) == zero) {
                 if ((byte_check_units << 1) == marker) {
-                    byte_check_units = zero;
                     count_bits_check = 1;
+                    byte_check_units = zero;
                     index_start_read = index;
                     break;
                 }
 
                 count_bits_check = 1;
             } else if (count_bits_check) {
-                byte_check_units = (byte_check_units << 1) | unit;
                 count_bits_check++;
+                byte_check_units = (byte_check_units << 1) | unit;
             }
         }
 
         for (int index = index_start_read - 1; index >= 0; index--) {
-            if (((byte_read_tmp >> index) & unit) == unit) {
-                count_bits_check++;
-                byte_check_units = (byte_check_units << 1) | unit;
-                count_bits_read++;
-                byte_read = (byte_read << 1) | unit;
-
-                if ((byte_read & incorrect_byte) == incorrect_byte) {
-                    error("Incorrect bit sequence\n");
-                    return EOF;
-                }
-            } else {
-                if ((byte_check_units & mask) != mask) {
-                    count_bits_read++;
-                    byte_read <<= 1;
-                }
-
-                count_bits_check = 1;
-                byte_check_units = zero;
+            if (!check_bit_unit(&byte_read, &byte_check_units, byte_read_tmp, 
+                                            &count_bits_read, &count_bits_check, index)) {
+                correct_bytes(&byte_read, &byte_check_units, &count_bits_read, &count_bits_check);
             }
         }
 
@@ -168,27 +153,13 @@ int read_message(FILE *stream, void *buf) {
         uint8_t byte_read_tmp = (uint8_t) symbol_read;
 
         for (int index = 7; index >= 0; index--) {
-            if (((byte_read_tmp >> index) & unit) == unit) {
-                byte_check_units = (byte_check_units << 1) | unit;
-                count_bits_check++;
-                byte_read = (byte_read << 1) | unit;
-                count_bits_read++;
-
-                if ((byte_read & incorrect_byte) == incorrect_byte) {
-                    error("Incorrect bit sequence\n");
-                    return EOF;
-                }
-
-                if (count_bits_read == len_byte) {
-                    buffer[count_byte_read++] = byte_read;
-                    count_bits_read = 0;
-                }
-            } else {
+            if (!check_bit_unit(&byte_read, &byte_check_units, byte_read_tmp, 
+                                            &count_bits_read, &count_bits_check, index)) {
                 if ((byte_check_units << 1) == marker) {
-                    // if (count_bits_read != (len_byte - 1)) {
-                    //     error("The payload contains a non-integer number of bytes\n");
-                    //     return EOF;
-                    // }
+                    if (count_bits_read != (len_byte - 1)) {
+                        error("The payload contains a non-integer number of bytes\n");
+                        return EOF;
+                    }
 
                     if (check_end_message(byte_read_tmp, index)) {
                         return EOF;
@@ -197,18 +168,12 @@ int read_message(FILE *stream, void *buf) {
                     return count_byte_read; 
                 }
 
-                if ((byte_check_units & mask) != mask) {
-                    count_bits_read++;
-                    byte_read <<= 1;
+                correct_bytes(&byte_read, &byte_check_units, &count_bits_read, &count_bits_check);
+            }
 
-                    if (count_bits_read == len_byte) {
-                        buffer[count_byte_read++] = byte_read;
-                        count_bits_read = 0;
-                    }
-                }
-
-                byte_check_units = zero;
-                count_bits_check = 1;
+            if (count_bits_read == len_byte) {
+                buffer[count_byte_read++] = byte_read;
+                count_bits_read = 0;
             }
         }
     }
@@ -259,7 +224,8 @@ int search_mask_byte_write(uint8_t *byte_write) {
     return 0;
 }
 
-int check_count_shift_after_joint(FILE *stream, uint8_t *byte_write, uint8_t *byte_joint, uint8_t *byte_shift, const uint8_t byte_buffer, int *count_shift) {
+int check_count_shift_after_joint(FILE *stream, uint8_t *byte_write, uint8_t *byte_joint, 
+                                  uint8_t *byte_shift, const uint8_t byte_buffer, int *count_shift) {
     if (*count_shift == len_byte) {
         *count_shift = 0;
         *byte_shift = 0;
@@ -291,7 +257,8 @@ int check_count_shift_after_joint(FILE *stream, uint8_t *byte_write, uint8_t *by
     return 0;
 }
 
-int check_count_shift_after_write(FILE *stream, uint8_t *byte_write, uint8_t *byte_joint, uint8_t *byte_shift, int *count_shift) {
+int check_count_shift_after_write(FILE *stream, uint8_t *byte_write, uint8_t *byte_joint, 
+                                                uint8_t *byte_shift, int *count_shift) {
     if (*count_shift == len_byte) {
         *byte_joint = (*byte_write << (len_byte / 2)) | (*byte_shift >> (len_byte / 2));
 
@@ -331,7 +298,8 @@ int check_count_shift_after_write(FILE *stream, uint8_t *byte_write, uint8_t *by
     return 0;
 }
 
-int check_count_shift_last_write(FILE *stream, uint8_t *byte_write, const uint8_t byte_joint, uint8_t *byte_shift, int *count_shift) {
+int check_count_shift_last_write(FILE *stream, uint8_t *byte_write, const uint8_t byte_joint, 
+                                               uint8_t *byte_shift, int *count_shift) {
     if (*count_shift == len_byte) {
         *count_shift = 0;
         *byte_shift = 0;
@@ -374,6 +342,40 @@ int write_end_message(FILE *stream, const uint8_t byte_write, const int count_sh
     }
 
     return 0;
+}
+
+int check_start_message() {
+
+}
+
+int check_bit_unit(uint8_t *byte_read, uint8_t *byte_check_units, const uint8_t byte_read_tmp, 
+                   int *count_bits_read, int *count_bits_check, int index) {
+    if (((byte_read_tmp >> index) & unit) == unit) {
+        *count_bits_read++;
+        *byte_read = (*byte_read << 1) | unit;
+        *count_bits_check++;
+        *byte_check_units = (*byte_check_units << 1) | unit;
+
+        if ((*byte_read & incorrect_byte) == incorrect_byte) {
+            error("Incorrect bit sequence\n");
+            return EOF;
+        }
+
+        return 1;
+    }
+
+    return 0;
+}
+
+void correct_bytes(uint8_t *byte_read, uint8_t *byte_check_units, 
+                   int *count_bits_read, int *count_bits_check) {
+    if ((*byte_check_units & mask) != mask) {
+        *count_bits_read++;
+        *byte_read <<= 1;
+    }
+
+    *count_bits_check = 1;
+    *byte_check_units = zero;
 }
 
 int check_end_message(const uint8_t byte_end_message, const int len_spare_units) {

@@ -25,12 +25,22 @@ int search_mask_byte_joint(uint8_t *byte_joint);
 
 int search_mask_byte_write(uint8_t *byte_write);
 
-int check_count_shift_after_joint(FILE *stream, uint8_t *byte_write, uint8_t *byte_joint, uint8_t *byte_shift, const uint8_t byte_buffer, int *count_shift);
+int check_count_shift_after_joint(FILE *stream, uint8_t *byte_write, uint8_t *byte_joint, 
+                                  uint8_t *byte_shift, const uint8_t byte_buffer, int *count_shift);
 
-int check_count_shift_after_write(FILE *stream, uint8_t *byte_write, uint8_t *byte_joint, uint8_t *byte_shift, int *count_shift);
+int check_count_shift_after_write(FILE *stream, uint8_t *byte_write, uint8_t *byte_joint, 
+                                                uint8_t *byte_shift, int *count_shift);
 
-int check_count_shift_last_write(FILE *stream, uint8_t *byte_write, const uint8_t byte_joint, uint8_t *byte_shift, int *count_shift);
+int check_count_shift_last_write(FILE *stream, uint8_t *byte_write, const uint8_t byte_joint, 
+                                               uint8_t *byte_shift, int *count_shift);
 
 int write_end_message(FILE *stream, const uint8_t byte_write, const int count_shift);
+
+
+void correct_bytes(uint8_t *byte_read, uint8_t *byte_check_units, int *count_bits_read, 
+                                                                  int *count_bits_check);
+
+int check_bit_unit(uint8_t *byte_read, uint8_t *byte_check_units, const uint8_t byte_read_tmp, 
+                   int *count_bits_read, int *count_bits_check, int index);
 
 int check_end_message(const uint8_t byte_end_message, const int len_spare_units);
