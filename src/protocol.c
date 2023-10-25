@@ -13,9 +13,9 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
 
     uint8_t *buffer = (uint8_t *) buf;
     int count_byte_write = 0;
-    uint8_t byte_write = 0;
-    uint8_t byte_joint = 0;
-    uint8_t byte_shift = 0;
+    uint8_t byte_write = zero;
+    uint8_t byte_joint = zero;
+    uint8_t byte_shift = zero;
     int count_shift = 0;
 
     for (size_t index = 0; index < nbyte; ++index) {
@@ -29,12 +29,13 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
                 byte_joint |= part_two >> ((len_byte / 2) - (count_shift - 1) + count_shift);
             } else {
                 uint8_t part_two = byte_shift << (len_byte / 2);
-                byte_joint |= part_two >> ((len_byte / 2) + 1) | buffer[index] >> (count_shift);
+                byte_joint |= (part_two >> ((len_byte / 2) + 1)) | (buffer[index] >> (count_shift));
             }
             
             byte_write = byte_joint;
 
-            if (check_count_shift_after_joint(stream, &byte_write, &byte_joint, &byte_shift, buffer[index], &count_shift)) {
+            if (check_count_shift_after_joint(stream, &byte_write, &byte_joint, 
+                                              &byte_shift, buffer[index], &count_shift)) {
                 return EOF;
             }
         } else {
@@ -59,7 +60,8 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
         }
         count_byte_write++;
 
-        if (check_count_shift_after_write(stream, &byte_write, &byte_joint, &byte_shift, &count_shift)) {
+        if (check_count_shift_after_write(stream, &byte_write, &byte_joint, 
+                                          &byte_shift, &count_shift)) {
             return EOF;
         }
     }
@@ -72,7 +74,8 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
             byte_joint |= part_two >> ((len_byte / 2) + 1);
             byte_write = byte_joint;
             
-            if (check_count_shift_last_write(stream, &byte_write, byte_joint, &byte_shift, &count_shift)) {
+            if (check_count_shift_last_write(stream, &byte_write, byte_joint, 
+                                             &byte_shift, &count_shift)) {
                 return EOF;
             }
         }
@@ -89,11 +92,11 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
                 error("Cannot write byte\n");
                 return EOF;
             }
-            byte_write = 0;
+            byte_write = zero;
         }
     }
 
-    if (write_end_message(stream, count_shift, byte_write)) {
+    if (write_end_message(stream, byte_write, count_shift)) {
         return EOF;
     }
 
@@ -101,64 +104,67 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
 }
 
 int read_message(FILE *stream, void *buf) {
-    uint8_t byte_read = 0;
-    int count_shift = 0;
+    uint8_t byte_read = zero; 
+    int count_bits_read = 0; // count significant bits in byte_read
 
-    if (read_start_message(stream, &byte_read, &count_shift)) {
+    if (read_start_message(stream, &byte_read, &count_bits_read)) {
         return EOF;
     }
-    
+
     uint8_t *buffer = (uint8_t *) buf;
     int count_byte_read = 0;
+    uint8_t byte_check_units = byte_read;
+    int count_bits_check = count_bits_read; // count significant bits in byte_check_units
     int symbol_read = 0;
-    uint8_t byte_shift = 0;
 
-    if (!byte_read) {
-        if ((symbol_read = getc(stream)) != EOF) {
-            if (symbol_read == marker) {
-                return count_byte_read;
-            }
-            if (search_byte_incorrect((uint8_t) symbol_read)) {
+    for (int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
+        uint8_t byte_read_tmp = (uint8_t) symbol_read;
+
+        for (int index = 7; index >= 0; index--) {
+            if (count_bits_check == len_incorrect_byte 
+            && (byte_check_units & incorrect_byte) == incorrect_byte) {
+                error("Incorrect bit sequence\n");
                 return EOF;
             }
-
-            byte_read = (uint8_t) symbol_read;
-        } else {
-            error("Cannot read byte\n");
-            return EOF;
-        }
-    }
-    
-    for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
-        byte_shift = ((uint8_t) symbol_read) >> (len_byte - count_shift);
-        
-        if ((byte_read | byte_shift) == marker) {
-            uint8_t byte_units = spare_units >> (len_byte - count_shift);
             
-            if (((uint8_t) symbol_read & byte_units) == byte_units) {
-                return count_byte_read;
+            if (((byte_read_tmp >> index) & unit) == unit) {
+                byte_check_units = (byte_check_units << 1) | unit;
+                count_bits_check++;
+                byte_read = (byte_read << 1) | unit;
+                count_bits_read++;
+
+                if (count_bits_read == len_byte) {
+                    buffer[count_byte_read++] = byte_read;
+                    count_bits_read = 0;
+                }
             } else {
-                error("The payload contains a non-integer number of bytes\n");
-                return EOF;
+                if (count_bits_check == (len_byte - 1)) {
+                    if (!count_bits_read) {
+                        error("The payload contains a non-integer number of bytes\n");
+                        return EOF;
+                    }
+
+                    if (check_end_message(byte_read_tmp, index)) {
+                        return EOF;
+                    }
+
+                    return count_byte_read; 
+                }
+
+                if ((byte_check_units & mask) != mask) {
+                    count_bits_read++;
+                    byte_read <<= 1;
+
+                    if (count_bits_read == len_byte) {
+                        buffer[count_byte_read++] = byte_read;
+                        count_bits_read = 0;
+                    }
+                }
+
+                byte_check_units = zero;
+                count_bits_check = 1;
             }
         }
-
-        if (search_byte_incorrect(byte_read | byte_shift)) {
-            return EOF;
-        }
-
-        byte_shift = (uint8_t) symbol_read >> (len_byte - count_shift);
-        byte_read |= byte_shift;
-        
-        if (search_mask_byte_read(&byte_read)) {
-            count_shift++;
-            if (count_shift == len_byte) {
-                count_shift = 0;
-            }
-        }
-
-        buffer[count_byte_read++] = byte_read;
-        byte_read = ((uint8_t) symbol_read) << count_shift;
     }
     if (ferror(stream)) {
         error("Cannot read byte\n");
@@ -170,9 +176,9 @@ int read_message(FILE *stream, void *buf) {
 }
 
 int search_mask_byte(const uint8_t byte_check) {
-    for (int cycle = 3; cycle >= 0; cycle--) {
-        if (((byte_check >> cycle) & mask) == mask) {
-            return cycle;
+    for (int step = 3; step >= 0; step--) {
+        if (((byte_check >> step) & mask) == mask) {
+            return step;
         }
     }
 
@@ -180,14 +186,27 @@ int search_mask_byte(const uint8_t byte_check) {
 }
 
 int search_mask_byte_joint(uint8_t *byte_joint) {
-    int cycle = search_mask_byte(*byte_joint);
+    int step = search_mask_byte(*byte_joint);
 
-    if (cycle != -1) {
+    if (step != -1) {
         uint8_t part_one = *byte_joint << (len_byte / 2);
-        uint8_t part_two = part_one << ((len_byte / 2) - cycle);
-        part_one >>= (len_byte - ((len_byte / 2) - cycle));
-        *byte_joint = part_one << (len_byte - ((len_byte / 2) - cycle)) 
-                    | part_two >> ((len_byte / 2) - cycle + 1);
+        uint8_t part_two = part_one << ((len_byte / 2) - step);
+        part_one >>= (len_byte - ((len_byte / 2) - step));
+        *byte_joint = (part_one << (len_byte - ((len_byte / 2) - step))) 
+                    | (part_two >> ((len_byte / 2) - step + 1));
+        return 1;
+    }
+
+    return 0;
+}
+
+int search_mask_byte_write(uint8_t *byte_write) {
+    int step = search_mask_byte(*byte_write);
+
+    if (step != -1) {
+        uint8_t part_one = *byte_write >> step;
+        uint8_t part_two = *byte_write << (len_byte - step);
+        *byte_write = (part_one << step) | (part_two >> (len_byte - step + 1));
         return 1;
     }
 
@@ -289,27 +308,14 @@ int check_count_shift_last_write(FILE *stream, uint8_t *byte_write, const uint8_
     return 0;
 }
 
-int search_mask_byte_write(uint8_t *byte_write) {
-    int cycle = search_mask_byte(*byte_write);
-
-    if (cycle != -1) {
-        uint8_t part_one = *byte_write >> cycle;
-        uint8_t part_two = *byte_write << (len_byte - cycle);
-        *byte_write = part_one << cycle | part_two >> (len_byte - cycle + 1);
-        return 1;
-    }
-
-    return 0;
-}
-
-int write_end_message(FILE *stream, const int count_shift, const uint8_t byte_write) {
+int write_end_message(FILE *stream, const uint8_t byte_write, const int count_shift) {
     if (count_shift) {
-        if (putc(byte_write | marker >> count_shift, stream) == EOF) {
+        if (putc(byte_write | (marker >> count_shift), stream) == EOF) {
             error("Cannot write byte\n");
             return EOF;
         }
-        if (putc(marker << (len_byte - count_shift) 
-                | (spare_units >> count_shift), stream) == EOF) {
+        if (putc((marker << (len_byte - count_shift)) 
+               | (spare_units >> count_shift), stream) == EOF) {
             error("Cannot write byte\n");
             return EOF;
         }
@@ -320,28 +326,28 @@ int write_end_message(FILE *stream, const int count_shift, const uint8_t byte_wr
         error("Cannot write byte\n");
         return EOF;
     }
+
     return 0;
 }
 
-int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
+int read_start_message(FILE *stream, uint8_t *byte_read, int *count_bits_read) {
     int symbol_read = 0;
 
-    for (unsigned int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
-        if ((((uint8_t) symbol_read) >> *count_shift | *byte_read) == marker) {
-            if (*count_shift) {
-                *count_shift = (len_byte - *count_shift);
-                *byte_read = ((uint8_t) symbol_read) << *count_shift;
+    for (int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
+        if (((((uint8_t) symbol_read) >> *count_bits_read) | *byte_read) == marker) {
+            if (*count_bits_read) {
+                *byte_read = ((uint8_t) symbol_read) << (len_byte - *count_bits_read);
             }
             return 0;
         }
-        if (*count_shift) {
+        if (*count_bits_read) {
             break;
         }
 
-        for (int cycle = 7; cycle >= 0; cycle--) {
-            if ((((uint8_t) symbol_read >> cycle) & 0x01) == 0x00) {
-                *count_shift = cycle + 1;
-                *byte_read = ((uint8_t) symbol_read) << (len_byte - *count_shift);
+        for (int index = 7; index >= 0; index--) {
+            if ((((uint8_t) symbol_read >> index) & unit) == zero) {
+                *count_bits_read = index + 1;
+                *byte_read = ((uint8_t) symbol_read) << (len_byte - *count_bits_read);
                 break;
             }
         }
@@ -355,25 +361,12 @@ int read_start_message(FILE *stream, uint8_t *byte_read, int *count_shift) {
     return EOF;
 }
 
-int search_byte_incorrect(uint8_t byte_incorrect) {
-    for (int i = 0; i < 2; ++i) {
-        if ((byte_incorrect >> i & spare_units >> 2) == spare_units >> 2) {
-            error("Incorrect bit sequence\n");
+int check_end_message(const u_int16_t byte_end_message, const int len_spare_units) {
+    for (int index = 0; index < len_spare_units; ++index) {
+        if ((byte_end_message & unit) != unit) {
+            error("Incorrect end message\n");
             return EOF;
         }
-    }
-
-    return 0;
-}
-
-int search_mask_byte_read(uint8_t *byte_read) {
-    int cycle = search_mask_byte(*byte_read);
-
-    if (cycle != -1) {
-        uint8_t part_one = *byte_read >> cycle;
-        uint8_t part_two = *byte_read << (len_byte - cycle + 1);
-        *byte_read = (part_one << cycle) | (part_two >> (len_byte - cycle));
-        return 1;
     }
 
     return 0;
