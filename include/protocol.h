@@ -8,12 +8,11 @@
 #define marker 0x7e
 #define mask 0x1f
 #define spare_units 0xff
-#define incorrect_byte 0x3f
+#define incorrect_byte 0x7f
 #define zero 0x00
 #define unit 0x01
 
 #define len_byte 8
-#define len_incorrect_byte 6
 #define MAX_MESSAGE_LEN 256
 
 int write_message(FILE *stream, const void *buf, size_t nbyte);

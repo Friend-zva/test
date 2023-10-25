@@ -185,10 +185,10 @@ int read_message(FILE *stream, void *buf) {
                 }
             } else {
                 if ((byte_check_units << 1) == marker) {
-                    if (count_bits_read != (len_byte - 1)) {
-                        error("The payload contains a non-integer number of bytes\n");
-                        return EOF;
-                    }
+                    // if (count_bits_read != (len_byte - 1)) {
+                    //     error("The payload contains a non-integer number of bytes\n");
+                    //     return EOF;
+                    // }
 
                     if (check_end_message(byte_read_tmp, index)) {
                         return EOF;
