@@ -108,46 +108,14 @@ int read_message(FILE *stream, void *buf) {
     int count_bits_read = 0; // count significant bits in byte_read
     uint8_t byte_check_units = zero;
     int count_bits_check = 0; // count significant bits in byte_check_units
-    int symbol_read = 0;
 
-    for (int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
-        uint8_t byte_read_tmp = (uint8_t) symbol_read;
-        int index_start_read = EOF;
-
-        for (int index = 7; index >= 0; index--) {
-            if (((byte_read_tmp >> index) & unit) == zero) {
-                if ((byte_check_units << 1) == marker) {
-                    count_bits_check = 1;
-                    byte_check_units = zero;
-                    index_start_read = index;
-                    break;
-                }
-
-                count_bits_check = 1;
-            } else if (count_bits_check) {
-                count_bits_check++;
-                byte_check_units = (byte_check_units << 1) | unit;
-            }
-        }
-
-        for (int index = index_start_read - 1; index >= 0; index--) {
-            if (!check_bit_unit(&byte_read, &byte_check_units, byte_read_tmp, 
-                                            &count_bits_read, &count_bits_check, index)) {
-                correct_bytes(&byte_read, &byte_check_units, &count_bits_read, &count_bits_check);
-            }
-        }
-
-        if (index_start_read != EOF) {
-            break;
-        }
-    }
-    if (feof(stream)) {
-        error("Cannot read start marker\n");
+    if (check_start_message(stream, &byte_read, &byte_check_units, &count_bits_read, &count_bits_check)) {
         return EOF;
     }
 
     uint8_t *buffer = (uint8_t *) buf;
     int count_byte_read = 0;
+    int symbol_read = 0;
 
     for (int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
         uint8_t byte_read_tmp = (uint8_t) symbol_read;
@@ -344,8 +312,47 @@ int write_end_message(FILE *stream, const uint8_t byte_write, const int count_sh
     return 0;
 }
 
-int check_start_message() {
+int check_start_message(FILE *stream, uint8_t *byte_read, uint8_t *byte_check_units, 
+                                      int *count_bits_read, int *count_bits_check) {
+    int symbol_read = 0;
 
+    for (int i = 0; (symbol_read = getc(stream)) != EOF; ++i) {
+        uint8_t byte_read_tmp = (uint8_t) symbol_read;
+        int index_start_read = EOF;
+
+        for (int index = 7; index >= 0; index--) {
+            if (((byte_read_tmp >> index) & unit) == zero) {
+                if ((*byte_check_units << 1) == marker) {
+                    *count_bits_check = 1;
+                    *byte_check_units = zero;
+                    index_start_read = index;
+                    break;
+                }
+
+                *count_bits_check = 1;
+            } else if (*count_bits_check) {
+                (*count_bits_check)++;
+                *byte_check_units = (*byte_check_units << 1) | unit;
+            }
+        }
+
+        for (int index = index_start_read - 1; index >= 0; index--) {
+            if (!check_bit_unit(byte_read, byte_check_units, byte_read_tmp, 
+                                            count_bits_read, count_bits_check, index)) {
+                correct_bytes(byte_read, byte_check_units, count_bits_read, count_bits_check);
+            }
+        }
+
+        if (index_start_read != EOF) {
+            break;
+        }
+    }
+    if (feof(stream)) {
+        error("Cannot read start marker\n");
+        return EOF;
+    }
+
+    return 0;
 }
 
 int check_bit_unit(uint8_t *byte_read, uint8_t *byte_check_units, const uint8_t byte_read_tmp, 

@@ -36,6 +36,8 @@ int check_count_shift_last_write(FILE *stream, uint8_t *byte_write, const uint8_
 
 int write_end_message(FILE *stream, const uint8_t byte_write, const int count_shift);
 
+int check_start_message(FILE *stream, uint8_t *byte_read, uint8_t *byte_check_units, 
+                                      int *count_bits_read, int *count_bits_check);
 
 void correct_bytes(uint8_t *byte_read, uint8_t *byte_check_units, int *count_bits_read, 
                                                                   int *count_bits_check);
