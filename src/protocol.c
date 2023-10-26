@@ -72,12 +72,13 @@ int write_message(FILE *stream, const void *buf, size_t nbyte) {
         if (count_shift > 4) {
             uint8_t part_two = byte_shift << (len_byte / 2);
             byte_joint |= part_two >> ((len_byte / 2) + 1);
-            byte_write = byte_joint;
-            
-            if (check_count_shift_last_write(stream, &byte_write, byte_joint, 
-                                             &byte_shift, &count_shift)) {
-                return EOF;
-            }
+        }
+
+        byte_write = byte_joint;
+        
+        if (check_count_shift_last_write(stream, &byte_write, byte_joint, 
+                                            &byte_shift, &count_shift)) {
+            return EOF;
         }
     } else {
         byte_write = byte_shift;
@@ -137,6 +138,11 @@ int read_message(FILE *stream, void *buf) {
                 }
 
                 correct_bytes(&byte_read, &byte_check_units, &count_bits_read, &count_bits_check);
+            } else {
+                if ((byte_check_units & incorrect_byte) == incorrect_byte) {
+                    error("Incorrect bit sequence\n");
+                    return EOF;
+                }
             }
 
             if (count_bits_read == len_byte) {
@@ -340,6 +346,11 @@ int check_start_message(FILE *stream, uint8_t *byte_read, uint8_t *byte_check_un
             if (!check_bit_unit(byte_read, byte_check_units, byte_read_tmp, 
                                             count_bits_read, count_bits_check, index)) {
                 correct_bytes(byte_read, byte_check_units, count_bits_read, count_bits_check);
+            } else {
+                if ((*byte_check_units & incorrect_byte) == incorrect_byte) {
+                    error("Incorrect bit sequence\n");
+                    return EOF;
+                }
             }
         }
 
@@ -362,11 +373,6 @@ int check_bit_unit(uint8_t *byte_read, uint8_t *byte_check_units, const uint8_t 
         *byte_read = (*byte_read << 1) | unit;
         (*count_bits_check)++;
         *byte_check_units = (*byte_check_units << 1) | unit;
-
-        if ((*byte_read & incorrect_byte) == incorrect_byte) {
-            error("Incorrect bit sequence\n");
-            return EOF;
-        }
 
         return 1;
     }
