@@ -43,9 +43,6 @@ function(add_mocked_test name)
     set(link_flags "${link_flags} -Wl,--wrap=${mock}")
   endforeach(mock)
 
-  if (CMocka_VERSION VERSION_GREATER_EQUAL "1.1.6")
-    list(APPEND CMOCKA_LIBRARIES cmocka::cmocka)
-  endif ()
   # define test
   add_cmocka_test(test_${name}
                   SOURCES test_${name}.c ${ADD_MOCKED_TEST_SOURCES}
