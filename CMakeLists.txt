@@ -6,5 +6,5 @@ set(CMAKE_C_STANDARD 99)
 file(GLOB_RECURSE MAIN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c)
 
 add_executable(main ${MAIN_SRC})
-target_compile_options(main PRIVATE )
-target_link_options(main PRIVATE )
+target_compile_options(main PRIVATE -fno-stack-protector )
+target_link_options(main PRIVATE -no-pie -z execstack)
