@@ -1,17 +1,10 @@
 cmake_minimum_required(VERSION 3.7)
-project(tests LANGUAGES C ASM)
+project(tests LANGUAGES C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_subdirectory(src)
+file(GLOB_RECURSE MAIN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
-
-# cmocka
-find_package(CMocka CONFIG)
-if (CMocka_FOUND)
-    include(AddCMockaTest)
-    include(AddMockedTest)
-    add_subdirectory(test)
-    enable_testing()
-endif(CMocka_FOUND)
+add_executable(main ${MAIN_SRC})
+target_compile_options(main PRIVATE )
+target_link_options(main PRIVATE )
